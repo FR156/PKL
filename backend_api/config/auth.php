@@ -40,6 +40,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Tambahkan guard 'sanctum' untuk API jika belum ada
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ],
     ],
 
     /*
@@ -62,12 +68,13 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            // PERBAIKAN: Mengganti model otentikasi dari User ke Karyawan.
+            'model' => App\Models\Karyawan::class,
         ],
 
         // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
+        //      'driver' => 'database',
+        //      'table' => 'users',
         // ],
     ],
 
