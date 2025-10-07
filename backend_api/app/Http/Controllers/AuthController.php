@@ -3,47 +3,48 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class AuthController extends Controller
 {
-    
-    // Login
+    // Login user dan buat token baru
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $request->validate([
+            'name' => 'required',
+            'password' => 'required',
+        ]);
 
-        if (!Auth::attempt($credentials)) {
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
+        // Cari user berdasarkan name
+        $user = User::where('name', $request->name)->first();
+
+        // Cek apakah user ada dan password cocok
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        $user = Auth::user();
+        // Hapus token lama (opsional, biar gak numpuk)
+        $user->tokens()->delete();
 
-        // Generate token via Sanctum
+        // Buat token baru
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
             'user' => $user,
-            'token' => $token
+            'token' => $token,
         ]);
     }
 
-    // Logout user
+    // Logout user (hapus token)
     public function logout(Request $request)
     {
-        $user = $request->user();
+        $request->user()->currentAccessToken()->delete();
 
-        // Revoke all tokens
-        $user->tokens()->delete();
-
-        return response()->json([
-            'message' => 'Logged out successfully'
-        ]);
+        return response()->json(['message' => 'Logged out successfully']);
     }
 
-    // Get logged in user
+    // Ambil data user yang sedang login
     public function getUser(Request $request)
     {
         return response()->json($request->user());

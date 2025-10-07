@@ -1,0 +1,56 @@
+# ================================
+# TEMPLATE PESAN COMMIT GIT
+# ================================
+# Cara pakai:
+# 1. Simpan file ini sebagai .gitmessage.txt di root project kamu.
+# 2. Jalankan perintah berikut agar git pakai template ini secara default:
+#       git config commit.template .gitmessage.txt
+# 3. Setelah itu, setiap kali kamu menjalankan:
+#       git commit
+#    Git otomatis akan membuka editor dengan template ini.
+#    Isi bagian yang dibutuhkan dan hapus tanda pagar (#) di depannya.
+
+# ============================================
+# Judul singkat (maks 50 karakter, wajib diisi)
+# Contoh: Perbaikan bug autentikasi Sanctum
+# ============================================
+<ISI PESAN PENDEK DI SINI>
+
+# ============================================
+# Deskripsi lengkap (opsional, tapi disarankan)
+# - Jelaskan *apa* yang diubah dan *mengapa*
+# - Boleh lebih dari satu paragraf
+# ============================================
+<DESKRIPSI PANJANG DI SINI>
+
+# ============================================
+# Detail Teknis (opsional)
+# - File / komponen yang diubah
+# - Fitur baru, bugfix, refactor, dsb
+# ============================================
+<DETAIL TEKNIS DI SINI>
+
+# ============================================
+# Catatan tambahan (opsional)
+# - TODO, langkah selanjutnya, atau hal yang perlu dicek
+# ============================================
+<CATATAN TAMBAHAN DI SINI>
+
+# ============================================
+# Contoh lengkap:
+#
+# Perbaikan bug autentikasi Sanctum dan penyempurnaan seeder
+#
+# Memperbaiki bug pada API akibat mismatch guard web dan sanctum.
+# AuthController sekarang menggunakan sistem token-based login penuh
+# menggunakan Sanctum, bukan session-based.
+#
+# Detail Teknis:
+# - Ubah default guard ke sanctum di config/auth.php
+# - Refactor AuthController
+# - Tambah seeder (User, Role, Permission, SuperAdmin)
+# - Update api.php agar permission per-endpoint
+#
+# Catatan:
+# - Perlu uji ulang endpoint assignPermission via Postman
+# ============================================

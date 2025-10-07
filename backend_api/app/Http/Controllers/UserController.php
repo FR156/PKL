@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    // List semua user (admin only)
+    // List semua user
     public function index()
     {
         $users = User::all();
@@ -38,6 +38,13 @@ class UserController extends Controller
             'message' => 'User created successfully',
             'user' => $user
         ]);
+    }
+
+    // Show user by ID
+    public function show($id)
+    {
+        $user = User::with('roles', 'permissions')->findOrFail($id);
+        return response()->json($user);
     }
 
     // Update user

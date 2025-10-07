@@ -1,0 +1,43 @@
+Perbaikan bug autentikasi Sanctum dan penyempurnaan seeder
+
+# ============================================= #
+# Deskripsi lengkap                             #
+# ============================================= #
+Memperbaiki bug pada API akibat mismatch guard antara `web` dan `sanctum` 
+yang menyebabkan autentikasi gagal saat menggunakan token. 
+Masalah diselesaikan dengan mengubah konfigurasi default guard di `config/auth.php`
+menjadi `sanctum` serta memperbarui AuthController agar menggunakan sistem 
+token-based login penuh (tanpa session-based authentication).
+
+Selain itu, dilakukan penyempurnaan pada data awal (seeder) untuk kebutuhan 
+pengujian sistem HRMS:
+- Seeder pengguna dummy (10 user) melalui UserFactory.
+- Seeder permission untuk semua endpoint API.
+- Seeder role dengan lima level: Super Admin, Owner, Manager, Supervisor, Employee.
+- Seeder Super Admin default dengan kredensial:
+  - Nama: Super Admin
+  - Email: superadmin@absolute.com
+  - Password: password123
+
+AuthServiceProvider juga diperbarui untuk memberikan akses penuh (bypass permission)
+kepada role Super Admin. File `api.php` diupdate agar endpoint memiliki permission 
+terpisah per aksi (tidak lagi dikelompokkan sebagai “manage role” atau “manage user”).
+
+# ============================================= #
+# Detail Teknis                                 #
+# ============================================= #
+- Update `config/auth.php`: ubah default guard ke `sanctum`
+- Refactor `AuthController` ke token-based (Sanctum)
+- Tambah dan perbaiki seeder:
+  - `UserSeeder` (dummy user via factory)
+  - `RoleSeeder`, `PermissionSeeder`, `SuperAdminSeeder`
+- Update `AuthServiceProvider` untuk super admin bypass permission
+- Update `api.php` → endpoint permission granular per aksi
+- Testing endpoint assign permission via Postman
+
+# ============================================= #
+# Catatan tambahan                              #
+# ============================================= #
+- Pastikan token autentikasi diuji ulang di Postman (login, get user, logout)
+- Lakukan verifikasi ulang pada role dan permission dengan guard `sanctum`
+- Next step: integrasi frontend React untuk login token-based
