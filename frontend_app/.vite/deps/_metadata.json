@@ -1,0 +1,121 @@
+{
+  "hash": "48316343",
+  "configHash": "f4f9d5c7",
+  "lockfileHash": "201733ff",
+  "browserHash": "e912984b",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "39495430",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "27892ab4",
+      "needsInterop": true
+    },
+    "jspdf": {
+      "src": "../../node_modules/jspdf/dist/jspdf.es.min.js",
+      "file": "jspdf.js",
+      "fileHash": "1bcb4447",
+      "needsInterop": false
+    },
+    "jspdf-autotable": {
+      "src": "../../node_modules/jspdf-autotable/dist/jspdf.plugin.autotable.mjs",
+      "file": "jspdf-autotable.js",
+      "fileHash": "b1ff493d",
+      "needsInterop": false
+    },
+    "xlsx": {
+      "src": "../../node_modules/xlsx/xlsx.mjs",
+      "file": "xlsx.js",
+      "fileHash": "8237c0a0",
+      "needsInterop": false
+    },
+    "recharts": {
+      "src": "../../node_modules/recharts/es6/index.js",
+      "file": "recharts.js",
+      "fileHash": "e02082b4",
+      "needsInterop": false
+    },
+    "docx": {
+      "src": "../../node_modules/docx/dist/index.mjs",
+      "file": "docx.js",
+      "fileHash": "2e117b7a",
+      "needsInterop": false
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "290a84ec",
+      "needsInterop": false
+    },
+    "react-webcam": {
+      "src": "../../node_modules/react-webcam/dist/react-webcam.js",
+      "file": "react-webcam.js",
+      "fileHash": "7d355ac5",
+      "needsInterop": true
+    },
+    "@tensorflow/tfjs": {
+      "src": "../../node_modules/@tensorflow/tfjs/dist/index.js",
+      "file": "@tensorflow_tfjs.js",
+      "fileHash": "54896ba3",
+      "needsInterop": false
+    },
+    "@tensorflow-models/face-landmarks-detection": {
+      "src": "../../node_modules/@tensorflow-models/face-landmarks-detection/dist/face-landmarks-detection.esm.js",
+      "file": "@tensorflow-models_face-landmarks-detection.js",
+      "fileHash": "1a4f9ce8",
+      "needsInterop": false
+    },
+    "@tensorflow/tfjs-backend-webgl": {
+      "src": "../../node_modules/@tensorflow/tfjs-backend-webgl/dist/index.js",
+      "file": "@tensorflow_tfjs-backend-webgl.js",
+      "fileHash": "88e3a1c1",
+      "needsInterop": false
+    },
+    "@mediapipe/face_mesh": {
+      "src": "../../node_modules/@mediapipe/face_mesh/face_mesh.js",
+      "file": "@mediapipe_face_mesh.js",
+      "fileHash": "daa0b608",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-W22WKJOX": {
+      "file": "chunk-W22WKJOX.js"
+    },
+    "chunk-74KPZJV4": {
+      "file": "chunk-74KPZJV4.js"
+    },
+    "chunk-5PKCZ6IZ": {
+      "file": "chunk-5PKCZ6IZ.js"
+    },
+    "chunk-4MEFMHKR": {
+      "file": "chunk-4MEFMHKR.js"
+    },
+    "html2canvas.esm-BKLXZZBT": {
+      "file": "html2canvas__esm-BKLXZZBT.js"
+    },
+    "purify.es-JY3CPTI7": {
+      "file": "purify__es-JY3CPTI7.js"
+    },
+    "index.es-FW4DKOPY": {
+      "file": "index__es-FW4DKOPY.js"
+    },
+    "chunk-SITVF2AJ": {
+      "file": "chunk-SITVF2AJ.js"
+    },
+    "chunk-JF7IVAG4": {
+      "file": "chunk-JF7IVAG4.js"
+    },
+    "chunk-4BPZ7PBZ": {
+      "file": "chunk-4BPZ7PBZ.js"
+    },
+    "chunk-G3PMV62Z": {
+      "file": "chunk-G3PMV62Z.js"
+    }
+  }
+}
