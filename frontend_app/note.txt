@@ -1,0 +1,56 @@
+
+permission atau fitur bisa di atur di superadmin
+page superadmin
+apa aja yg bisa di atur superadmin 
+manajemen data manager login bikin sama kaya karyawan
+laporan semua ekspor word txt excel pdf
+
+owner bisa lihat laporan gaji dan kehadiran kaya di manager
+page supervisor kaya manager tapi ngurus prestasi peforma = absensi , prestasi pencapaian target
+owner bisa ngasih target untuk prestasi per divisi - > dashboard user -> masukkakn laporan target word excel pdf txt -> role lain buat di approve -> progres bar nyala 
+custom role super admin
+page gaji dashboard userfix tensorflow
+jarak absensi 5-10 meter bisa input custom lokasi dari owner
+ekspor slip gaji dari karyawan  
+face lock sistem kaya andro jadi pertama kali dia masuk nah itu daftar muka dulu dan ai nya bakal detect pas wfh 
+kedip kedip face detection
+tanggal dan judul dibagian absensi , serta cuti berkurang kalau di aprove sama manager
+logic pengurangan gaji , terlambat  
+responsif
+single page , semua kecuali profile
+
+- Page Laporan kerja input judul sama file pdf excel word 
+- Page Performa kerja bekerja kalau si manager approve
+
+peforma di nilai dari kehadiran sama target 
+
+prioritaskan dari yang atas dulu
+lokasi di owner harus bisa di liat detail list siapa itu yang di foto
+
+di manajemen karawan semua datanya harus lengkap
+training ai biar makin akurat untuk muka , jadi kalau mata aja ga bisa 
+detail kamera wajah tertutup atau kamera ga di kasi izin
+terlambat absensi waktu , sama alert ga bisa absen pulang sebelum waktu pulang yang telah di tentukan oleh owner bisa sih tapi di hitung jam kerjanya sesuai dia clock out dan berpengaruh ke peforma karyawan
+gaji sama laporan sama peforma di owner dashboard
+owner bisa atur jam masuk dan jam pulang
+jangan apa yg di lakukan aksi selanjutnya jangan selsai , buat selesai jika target telah di kirim dan telah di approve , kalau masih pending buat aksi sekarang itu menunggu , kalau dia blm ngelakuin apa apa buat aksi selanjutnya itu untuk mengerjakan apa yang bosnya targetkan
+buat datanya lengkap / keterangan datanya id nama divisi tanggal gabung nama email no telp sisa cuti
+harus approve manager seluruh perubahan profile karyawan
+manager bisa atur profile nama divisi email telepon tgl gabung
+perbaiki bug cuti
+perbaiki bug ekspor
+tugas karyawan itu di approve supervisor 
+profile input NIK 
+owner bisa input lokasi 
+fitur absensi lokasi ga bisa lebih dari 5-10 meter
+supervisor bisa absen
+manager bisa liat peforma
+owner atur jam pulang itu berfungsi
+akurasi 20-30
+sweet alert pastikan data anda sudah benar
+selesai ubah jadi task selanjutnya
+fix bug cuti dia berkurang kalau uda di approve
+perbaiki bug cuti
+tensorflow harus berfungsi mendeteksi 1 muka aja 
+absen manager ada tensorflow juga ada lokasi dan waktu 
+work tugas dari owner ke karyawan dan bisa di terima dan masuk ke peforma
