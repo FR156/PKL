@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
+use App\Models\Account;
 
 class AuthController extends Controller
 {
@@ -17,21 +17,21 @@ class AuthController extends Controller
         ]);
 
         // Cari user berdasarkan name
-        $user = User::where('name', $request->name)->first();
+        $account = Account::where('name', $request->name)->first();
 
         // Cek apakah user ada dan password cocok
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$account || !Hash::check($request->password, $account->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
         // Hapus token lama (opsional, biar gak numpuk)
-        $user->tokens()->delete();
+        $account->tokens()->delete();
 
         // Buat token baru
-        $token = $user->createToken('api-token')->plainTextToken;
+        $token = $account->createToken('api-token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $account,
             'token' => $token,
         ]);
     }

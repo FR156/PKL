@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RolePermissionController;
 
@@ -13,14 +13,14 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
 
     // Basic user actions
-    Route::get('/user', [AuthController::class, 'getUser']);    
+    Route::get('/me', [AuthController::class, 'getUser']);    
     Route::post('/logout', [AuthController::class, 'logout']); 
 
-    // User management (CRUD, granular)
-    Route::get('/users', [UserController::class, 'index'])->middleware('permission:view users');
-    Route::post('/users', [UserController::class, 'store'])->middleware('permission:create users');
-    Route::put('/users/{id}', [UserController::class, 'update'])->middleware('permission:edit users');
-    Route::delete('/users/{id}', [UserController::class, 'destroy'])->middleware('permission:delete users');
+    // Account management (CRUD, granular)
+    Route::get('/accounts', [AccountController::class, 'index'])->middleware('permission:view accounts');
+    Route::post('/accounts', [AccountController::class, 'store'])->middleware('permission:create accounts');
+    Route::put('/accounts/{id}', [AccountController::class, 'update'])->middleware('permission:edit accounts');
+    Route::delete('/accounts/{id}', [AccountController::class, 'destroy'])->middleware('permission:delete accounts');
 
     // Role management (CRUD, granular)
     Route::get('/roles', [RoleController::class, 'index'])->middleware('permission:view roles');
