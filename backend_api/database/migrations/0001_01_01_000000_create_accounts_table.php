@@ -26,7 +26,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        /*// 🔹 TABLE: password_reset_tokens
+        // 🔹 TABLE: password_reset_tokens
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
@@ -46,7 +46,7 @@ return new class extends Migration
 
             $table->longText('payload');
             $table->integer('last_activity')->index();
-        });*/
+        });
     }
 
     public function down(): void

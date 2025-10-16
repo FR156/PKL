@@ -32,6 +32,13 @@ class PermissionSeeder extends Seeder
             // Assign permissions to role
             'assign permissions to role',
             'view role permissions',
+
+            // Attendance Management
+            'view attendances',
+            'create attendances',
+            'edit attendances',
+            'delete attendances',
+            'review attendances',
         ];
 
         foreach ($permissions as $permission) {

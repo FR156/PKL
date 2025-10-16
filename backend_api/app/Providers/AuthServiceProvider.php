@@ -25,5 +25,11 @@ class AuthServiceProvider extends ServiceProvider
                 return true;
             }
         });
+         
+        Gate::before(function ($user, $ability) {
+            if ($user->hasRole('employee')) {
+                return true;
+            }
+        });
     }
 }

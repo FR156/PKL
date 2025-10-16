@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RolePermissionController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AttendanceReasonController;
 
 // Public
 Route::post('/login', [AuthController::class, 'login']);
@@ -31,5 +33,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Role-Permission management
     Route::post('/roles/{id}/permissions', [RolePermissionController::class, 'assignPermissions'])->middleware('permission:assign permissions to role'); 
     Route::get('/roles/{id}/permissions', [RolePermissionController::class, 'getPermissions'])->middleware('permission:view role permissions'); 
+
+    // Attendance management (CRUD + review)
+    Route::get('/attendances', [AttendanceController::class, 'index'])->middleware('permission:view attendances');
+    Route::get('/attendances/{id}', [AttendanceController::class, 'show'])->middleware('permission:view attendances');
+    Route::post('/attendances', [AttendanceController::class, 'store'])->middleware('permission:create attendances');
+    Route::put('/attendances/{id}', [AttendanceController::class, 'update'])->middleware('permission:edit attendances');
+    Route::delete('/attendances/{id}', [AttendanceController::class, 'destroy'])->middleware('permission:delete attendances');
+    Route::put('/attendances/{id}/review', [AttendanceController::class, 'review'])->middleware('permission:review attendances');
 
 });
