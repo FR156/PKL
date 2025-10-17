@@ -51,7 +51,6 @@ class MakeHelper extends Command
 
         $this->newLine();
         $this->components->info("Helper [{$namespace}] created successfully.");
-        $this->newLine();
 
         return self::SUCCESS;
     }
