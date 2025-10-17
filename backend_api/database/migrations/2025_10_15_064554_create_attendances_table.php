@@ -13,17 +13,21 @@ return new class extends Migration
     {
         Schema::create('attendances', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('account_id')->nullable(); // sementara bisa null
-            $table->string('photo_path')->nullable();
-            $table->string('location')->nullable();
-            $table->dateTime('clock_in')->nullable();
-            $table->dateTime('clock_out')->nullable();
+            $table->foreignId('account_id')->constrained('accounts');
+            $table->enum('type', ['clock_in', 'clock_out']);
+            $table->dateTime('timestamp'); // waktu real dari frontend dulu, nanti baru server time
+            $table->decimal('latitude', 10, 6);
+            $table->decimal('longitude', 10, 6);
+            $table->string('photo_path');
             $table->boolean('is_late')->default(false);
-            $table->enum('status', ['present', 'auto', 'absent'])->default('present');
-            $table->unsignedBigInteger('reviewed_by')->nullable();
-            $table->timestamp('reviewed_at')->nullable();
+            $table->enum('status', ['approved', 'rejected', 'auto'])->default('approved');
+            $table->boolean('auto_clockout')->default(false);
+            $table->foreignId('reviewed_by')->nullable()->constrained('accounts');
+            $table->dateTime('reviewed_at')->nullable();
+            $table->text('reason')->nullable();
             $table->timestamps();
         });
+
     }
 
     /**

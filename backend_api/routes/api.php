@@ -36,10 +36,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Attendance management (CRUD + review)
     Route::get('/attendances', [AttendanceController::class, 'index'])->middleware('permission:view attendances');
+    Route::post('/attendances/clock-in', [AttendanceController::class, 'clockIn'])->middleware('permission:create attendances');
+    Route::post('/attendances/clock-out', [AttendanceController::class, 'clockOut'])->middleware('permission:create attendances');
+    Route::get('/attendances/review', [AttendanceController::class, 'approved'])->middleware('permission:view approved attendances');
+    Route::put('/attendances/review/{id}', [AttendanceController::class, 'review'])->middleware('permission:review attendances');
     Route::get('/attendances/{id}', [AttendanceController::class, 'show'])->middleware('permission:view attendances');
-    Route::post('/attendances', [AttendanceController::class, 'store'])->middleware('permission:create attendances');
-    Route::put('/attendances/{id}', [AttendanceController::class, 'update'])->middleware('permission:edit attendances');
+    // Route::put('/attendances/{id}', [AttendanceController::class, 'update'])->middleware('permission:edit attendances');
     Route::delete('/attendances/{id}', [AttendanceController::class, 'destroy'])->middleware('permission:delete attendances');
-    Route::put('/attendances/{id}/review', [AttendanceController::class, 'review'])->middleware('permission:review attendances');
 
 });

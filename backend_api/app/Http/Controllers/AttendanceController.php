@@ -14,46 +14,93 @@ class AttendanceController extends Controller
         return response()->json($attendances);
     }
 
-    // POST /api/attendances (clock-in / clock-out dummy)
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'photo_path' => 'nullable|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'clock_in' => 'nullable|date',
-            'clock_out' => 'nullable|date|after_or_equal:clock_in',
-            'is_late' => 'boolean',
-            'status' => 'required|in:present,auto,absent',
-            'reviewed_by' => 'nullable|integer|exists:accounts,id',
-            'reviewed_at' => 'nullable|date',
-        ]);
-
-        $validated['account_id'] = auth()->id(); // 🔥 ambil dari user login
-
-        $attendance = Attendance::create($validated);
-
-        return success('Attendance recorded successfully', $attendance);
-    }
-
-    // PUT /api/attendances/{id} 
-    public function update(Request $request, $id)
+    // Show single attendance record
+    public function show($id)
     {
         $attendance = Attendance::findOrFail($id);
-        
+
+        return response()->json($attendance);
+    }
+
+    // Clock In
+    public function clockIn(Request $request)
+    {
         $validated = $request->validate([
-            'photo_path' => 'nullable|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'clock_in' => 'nullable|date',
-            'clock_out' => 'nullable|date|after_or_equal:clock_in',
-            'is_late' => 'boolean',
-            'status' => 'required|in:present,auto,absent',
-            'reviewed_by' => 'nullable|integer|exists:accounts,id',
-            'reviewed_at' => 'nullable|date',
+            'timestamp' => 'required|date',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'photo_path' => 'required|string|max:255',
         ]);
 
-        $attendance->update($validated);
+        $attendance = Attendance::create([
+            'account_id' => $request->user()->id,
+            'type' => 'clock_in',
+            'timestamp' => $validated['timestamp'],
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+            'photo_path' => $validated['photo_path'],
+            'status' => 'approved',
+            'is_late' => false, // nanti bisa diatur logic auto-late check
+        ]);
 
-        return success('Attendance updated successfully', $attendance);
+        return success('Clock in recorded successfully', $attendance);
+    }
+
+    // Clock Out
+    public function clockOut(Request $request)
+    {
+        $validated = $request->validate([
+            'timestamp' => 'required|date',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'photo_path' => 'required|string|max:255',
+        ]);
+
+        $attendance = Attendance::create([
+            'account_id' => $request->user()->id,
+            'type' => 'clock_out',
+            'timestamp' => $validated['timestamp'],
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+            'photo_path' => $validated['photo_path'],
+            'status' => 'approved',
+            'auto_clockout' => false, // nanti logic auto akan ubah ini jadi true
+        ]);
+
+        return success('Clock out recorded successfully', $attendance);
+    }
+
+    public function approved()
+    {
+        $records = Attendance::where('status', 'approved')->get();
+
+        if (!$records) {
+            return response()->json([
+                'message' => 'No approved attendances found',
+                'data' => []
+            ], 404);
+        }
+
+        return success('Approved attendances retrieved successfully', $records);
+    }
+
+    // Review attendances (approve/reject)
+    public function review(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:approved,rejected',
+            'reason' => 'nullable|string',
+        ]);
+
+        $attendance = Attendance::findOrFail($id);
+        $attendance->update([
+            'status' => $validated['status'],
+            'reason' => $validated['reason'] ?? null,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
+
+        return success('Attendance reviewed successfully', $attendance);
     }
 
     // DELETE /api/attendances/{id}

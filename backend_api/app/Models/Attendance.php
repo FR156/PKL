@@ -12,14 +12,17 @@ class Attendance extends Model
 
     protected $fillable = [
         'account_id',
+        'type',
+        'timestamp',
+        'latitude',
+        'longitude',
         'photo_path',
-        'location',
-        'clock_in',
-        'clock_out',
         'is_late',
         'status',
+        'auto_clockout',
         'reviewed_by',
         'reviewed_at',
+        'reason',
     ];
 
     public function reason()
