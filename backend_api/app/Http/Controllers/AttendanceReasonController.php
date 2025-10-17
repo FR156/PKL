@@ -24,6 +24,16 @@ class AttendanceReasonController extends Controller
         ]);
     }
 
+    public function pending()
+    {
+        $reasons = AttendanceReason::where('review_status', 'pending')->get();
+
+        return response()->json([
+            'message' => 'Pending attendance reasons fetched successfully',
+            'data' => $reasons
+        ]);
+    }
+
     // PUT /api/attendance-reasons/{id}/review
     public function review(Request $request, $id)
     {

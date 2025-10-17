@@ -40,6 +40,10 @@ class PermissionSeeder extends Seeder
             'delete attendances',
             'review attendances',
             'view approved attendances',
+            'create attendance reasons',
+            'view attendance reasons',
+            'review attendance reasons',
+            'delete attendance reasons',
         ];
 
         foreach ($permissions as $permission) {
