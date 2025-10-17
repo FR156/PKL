@@ -25,7 +25,7 @@ class AttendanceController extends Controller
         return response()->json($attendance);
     }
 
-    // Clock In
+    // Clock In function
     public function clockIn(Request $request)
     {
         $validated = $request->validate([
@@ -33,12 +33,23 @@ class AttendanceController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'photo_path' => 'required|string|max:255',
-            'description' => 'nullable|string|max:500', // alasan kalau telat
+            'description' => 'nullable|string|max:500',
         ]);
 
         $timestamp = Carbon::parse($validated['timestamp']);
-        $workStart = Carbon::createFromTime(8, 0, 0); // jam mulai kerja
-        $isLate = $timestamp->gt($workStart);
+        // FIX: Compare only the time portion, not the full datetime
+        $checkInTime = $timestamp->format('H:i:s');
+        $workStartTime = '08:00:00';
+        $isLate = $checkInTime > $workStartTime;
+
+        // Debugging - add this temporarily to see what's happening
+        // \Log::info('Clock In Debug', [
+        //     'timestamp' => $validated['timestamp'],
+        //     'parsed_timestamp' => $timestamp->toString(),
+        //     'check_in_time' => $checkInTime,
+        //     'work_start_time' => $workStartTime,
+        //     'is_late' => $isLate
+        // ]);
 
         $attendance = Attendance::create([
             'account_id' => Auth::id(),
@@ -51,7 +62,6 @@ class AttendanceController extends Controller
             'status' => 'approved',
         ]);
 
-        // Kalau telat, wajib isi alasan → buat record di attendance_reasons
         if ($isLate) {
             if (empty($validated['description'])) {
                 return response()->json([

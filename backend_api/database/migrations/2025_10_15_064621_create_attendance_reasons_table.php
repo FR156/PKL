@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('attendances_reasons', function (Blueprint $table) {
+        Schema::create('attendance_reasons', function (Blueprint $table) {
             $table->id();
             $table->foreignId('attendance_id')->constrained('attendances')->onDelete('cascade');
             $table->enum('reason_type', ['late', 'auto_clockout']);
