@@ -769,7 +769,7 @@ const SupervisorDashboard = (props) => {
                 <TabButton isActive={activeTab === 'attendanceApproval'} onClick={() => setActiveTab('attendanceApproval')}>
                     <i className="fas fa-user-check mr-2"></i> Persetujuan Absensi
                 </TabButton>
-                <TabButton isActive={activeTab === 'performance'} onClick={() => setActiveTab('performance')}>
+                <TabButton isActive={activeTab === '    mance'} onClick={() => setActiveTab('performance')}>
                     <i className="fas fa-chart-line mr-2"></i> Performa Karyawan
                 </TabButton>
                 <TabButton isActive={activeTab === 'attendance'} onClick={() => setActiveTab('attendance')}>

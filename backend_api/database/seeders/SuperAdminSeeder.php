@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
+use App\Models\Account;
 use Spatie\Permission\Models\Role;
 
 class SuperAdminSeeder extends Seeder
@@ -15,7 +15,7 @@ class SuperAdminSeeder extends Seeder
         $role = Role::where('name', 'super-admin')->first();
 
         // Buat user super-admin (kalau belum ada)
-        $superAdmin = User::firstOrCreate(
+        $superAdmin = Account::firstOrCreate(
             ['email' => 'superadmin@absolute.com'],
             [
                 'name' => 'Super Admin',

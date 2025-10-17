@@ -17,11 +17,11 @@ class PermissionSeeder extends Seeder
             'get user',
             'logout',
 
-            // User management
-            'view users',
-            'create users',
-            'edit users',
-            'delete users',
+            // Account management
+            'view accounts',
+            'create accounts',
+            'edit accounts',
+            'delete accounts',
 
             // Role management
             'view roles',
