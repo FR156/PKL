@@ -10,14 +10,20 @@ class UserController extends Controller
     // GET /users
     public function index()
     {
-        return response()->json(User::with('account')->get());
+        $users = User::with('account')->get();
+        return success('Users retrieved successfully', $users);
     }
 
     // GET /users/{id}
     public function show($id)
     {
-        $user = User::with('account')->findOrFail($id);
-        return response()->json($user);
+        $user = User::with('account')->find($id);
+
+        if (! $user) {
+            return error('User not found');
+        }
+
+        return success('User retrieved successfully', $user);
     }
 
     // POST /users
@@ -39,13 +45,17 @@ class UserController extends Controller
         ]);
 
         $user = User::create($validated);
-        return response()->json($user, 201);
+        return success('User created successfully', $user);
     }
 
     // PUT /users/{id}
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::find($id);
+
+        if (! $user) {
+            return error('User not found');
+        }
 
         $validated = $request->validate([
             'phone' => 'nullable|string|max:20',
@@ -57,15 +67,19 @@ class UserController extends Controller
         ]);
 
         $user->update($validated);
-        return response()->json($user);
+        return success('User updated successfully', $user);
     }
 
     // DELETE /users/{id}
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
-        $user->delete();
+        $user = User::find($id);
 
-        return response()->json(['message' => 'User deleted successfully']);
+        if (! $user) {
+            return error('User not found');
+        }
+
+        $user->delete();
+        return success('User deleted successfully');
     }
 }

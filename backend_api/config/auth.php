@@ -112,4 +112,20 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Token Expiration Handling
+    |--------------------------------------------------------------------------
+    | Here you may define how your application handles token expiration
+    | for authentication tokens. This includes settings for access tokens
+    | and refresh tokens if applicable.
+    |-------------------------------------------------------------------------
+    */
+
+    'token_expiry' => [
+        'access'  => env('ACCESS_TOKEN_LIFETIME', 1800), // 30 minutes
+        'refresh' => env('REFRESH_TOKEN_LIFETIME', 86400), // 24 hours
+    ],
+
+
 ];
