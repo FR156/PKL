@@ -4,27 +4,42 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
+use App\Http\Requests\RolePermission\AssignPermissionRequest;
 
 class RolePermissionController extends Controller
 {
-
-    // Assign permissions ke role 
-    public function assignPermissions(Request $request, $id)
+    /**
+     * Assign permissions to a specific role.
+     */
+    public function assignPermissions(AssignPermissionRequest $request, $id)
     {
-        $request->validate([
-            'permissions' => 'required|array'
-        ]);
+        $role = Role::find($id);
 
-        $role = Role::findOrFail($id);
+        if (!$role) {
+            return error('Role not found', [], 404);
+        }
+
         $role->syncPermissions($request->permissions);
 
-        return response()->json(['message' => 'Permissions assigned successfully']);
+        return success('Permissions assigned successfully', [
+            'role' => $role->load('permissions')
+        ]);
     }
 
-    // Ambil daftar permission dari role tertentu
+    /**
+     * Get all permissions assigned to a specific role.
+     */
     public function getPermissions($id)
     {
-        $role = Role::with('permissions')->findOrFail($id);
-        return response()->json(['data' => $role->permissions]);
+        $role = Role::with('permissions')->find($id);
+
+        if (!$role) {
+            return error('Role not found', [], 404);
+        }
+
+        return success('Role permissions retrieved successfully', [
+            'role'        => $role->only(['id', 'name']),
+            'permissions' => $role->permissions,
+        ]);
     }
 }

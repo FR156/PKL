@@ -17,7 +17,7 @@ class PermissionSeeder extends Seeder
             'get user',
             'logout',
 
-            // User management
+            // Account management
             'view accounts',
             'create accounts',
             'edit accounts',

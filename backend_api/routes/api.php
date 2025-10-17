@@ -10,6 +10,7 @@ use App\Http\Controllers\AttendanceReasonController;
 
 // Public
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/refresh', [AuthController::class, 'refresh']);
 
 // Protected 
 Route::middleware('auth:sanctum')->group(function () {
@@ -21,6 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Account management (CRUD, granular)
     Route::get('/accounts', [AccountController::class, 'index'])->middleware('permission:view accounts');
     Route::post('/accounts', [AccountController::class, 'store'])->middleware('permission:create accounts');
+    Route::get('/accounts/{id}', [AccountController::class, 'show'])->middleware('permission:view accounts');
     Route::put('/accounts/{id}', [AccountController::class, 'update'])->middleware('permission:edit accounts');
     Route::delete('/accounts/{id}', [AccountController::class, 'destroy'])->middleware('permission:delete accounts');
 
