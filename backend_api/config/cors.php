@@ -4,37 +4,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Konfigurasi CORS
+    | Cross-Origin Resource Sharing (CORS) Configuration
     |--------------------------------------------------------------------------
     |
-    | File ini mengatur aturan CORS yang digunakan oleh middleware HandleCors.
-    | Ini adalah solusi standar untuk API yang menggunakan Sanctum/Cookies.
+    | Menentukan apa saja request lintas domain yang diizinkan.
+    | Sesuaikan domain frontend untuk production.
     |
     */
 
-    // Jalur (paths) yang akan dicek CORS-nya.
-    // 'api/*' mencakup semua endpoint API lu.
-    // 'sanctum/csrf-cookie' penting untuk inisialisasi Sanctum.
+    // Semua API endpoint
     'paths' => ['api/*'],
 
-    // Metode HTTP yang diizinkan (GET, POST, dll.)
+    // Semua HTTP method diizinkan
     'allowed_methods' => ['*'],
 
-    // Origin (Frontend) yang diizinkan untuk mengakses API lu.
-    // KUNCI: Harus spesifik dan bukan wildcard (*).
-    'allowed_origins' => ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    // Hanya izinkan domain frontend (ganti sesuai environment)
+    'allowed_origins' => [
+        env('FRONTEND_URL', 'http://localhost:3000'),
+    ],
 
     'allowed_origins_patterns' => [],
 
-    // Header yang diizinkan dari frontend (Content-Type, Authorization, dll.)
+    // Semua header diizinkan
     'allowed_headers' => ['*'],
 
+    // Header yang boleh diexpose ke frontend
     'exposed_headers' => [],
 
-    // KUNCI UTAMA: Harus TRUE karena frontend lu mengirim withCredentials (cookies/Sanctum).
-    // TRUE memaksa 'Access-Control-Allow-Origin' TIDAK boleh *
-    'supports_credentials' => true,
-
+    // Cache preflight request (dalam detik)
     'max_age' => 0,
 
+    // Tidak menggunakan cookie/session, cukup token bearer
+    'supports_credentials' => false,
 ];

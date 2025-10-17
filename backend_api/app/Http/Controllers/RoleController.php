@@ -4,56 +4,81 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
+use App\Http\Requests\Role\StoreRequest;
+use App\Http\Requests\Role\UpdateRequest;
 
 class RoleController extends Controller
 {
-
-    // Tampilkan semua role beserta permission-nya
+    /**
+     * Display all roles with their permissions.
+     */
     public function index()
     {
         $roles = Role::with('permissions')->get();
-        return response()->json(['data' => $roles]);
+
+        if ($roles->isEmpty()) {
+            return error('No roles found', [], 404);
+        }
+
+        return success('Roles retrieved successfully', [
+            'roles' => $roles
+        ]);
     }
 
-    // Tambah role baru
-    public function store(Request $request)
+    /**
+     * Store a newly created role.
+     */
+    public function store(StoreRequest $request)
     {
-        $request->validate([
-            'name' => 'required|unique:roles,name'
-        ]);
-
         $role = Role::create(['name' => $request->name]);
-        return response()->json(['message' => 'Role created successfully', 'data' => $role]);
+
+        if (!$role) {
+            return error('Failed to create role', [], 500);
+        }
+
+        return success('Role created successfully', [
+            'role' => $role
+        ], 201);
     }
 
-    // Ubah nama role
-    public function update(Request $request, $id)
+    /**
+     * Update the specified role.
+     */
+    public function update(UpdateRequest $request, $id)
     {
-        $request->validate([
-            'name' => 'required|unique:roles,name,' . $id
-        ]);
+        $role = Role::find($id);
 
-        $role = Role::findOrFail($id);
+        if (!$role) {
+            return error('Role not found', [], 404);
+        }
+
         $role->update(['name' => $request->name]);
 
-        return response()->json(['message' => 'Role updated successfully', 'data' => $role]);
+        return success('Role updated successfully', [
+            'role' => $role
+        ]);
     }
 
-    // Hapus role
+    /**
+     * Remove the specified role.
+     */
     public function destroy($id)
     {
-        
-        $role = Role::findOrFail($id);
+        $role = Role::find($id);
 
-        // detach semua permission dulu
+        if (!$role) {
+            return error('Role not found', [], 404);
+        }
+
+        // Detach all related permissions & users before deletion
         $role->permissions()->detach();
 
-        // detach semua users dulu (jika ada)
-        $role->users()->detach();
+        if (method_exists($role, 'users')) {
+            $role->users()->detach();
+        }
 
         $role->delete();
 
-        return response()->json(['message' => 'Role deleted successfully']);
+        return success('Role deleted successfully');
     }
-
 }
