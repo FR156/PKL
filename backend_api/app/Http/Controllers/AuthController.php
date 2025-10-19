@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Account;
 use Laravel\Sanctum\PersonalAccessToken;
-use Carbon\Carbon;
 
 class AuthController extends Controller
 {
