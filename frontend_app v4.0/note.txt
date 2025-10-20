@@ -93,3 +93,6 @@ loadingnya punya masih punya pribadi
 
 security
 cari semua kerentanan dan ganti -> refrector code
+
+responsif 
+header responsif dan perpaduan warna

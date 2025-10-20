@@ -94,6 +94,8 @@ const EmployeeDashboard = (props) => {
 
       <div className="container mx-auto px-3 sm:px-4 py-4">
         <div className="flex flex-col lg:flex-row gap-4">
+
+
           {/* Sidebar */}
           <div className={`
             lg:w-64 transform transition-all duration-300 ease-in-out
@@ -122,8 +124,7 @@ const EmployeeDashboard = (props) => {
                     src={user?.profileImage || 'https://picsum.photos/seed/employee/48/48.jpg'}
                     alt="Profile"
                     className="w-12 h-12 rounded-full object-cover border-2 border-white/50 shadow-[0_4px_16px_0_rgba(31,38,135,0.2)]"
-                  />
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white/80"></div>
+                  />                
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-semibold text-gray-600/80 truncate max-w-[120px]">{user?.name || 'Guest'}</p>
