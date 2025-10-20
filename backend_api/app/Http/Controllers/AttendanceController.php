@@ -37,7 +37,6 @@ class AttendanceController extends Controller
         ]);
 
         $timestamp = Carbon::parse($validated['timestamp']);
-        // FIX: Compare only the time portion, not the full datetime
         $checkInTime = $timestamp->format('H:i:s');
         $workStartTime = '08:00:00';
         $isLate = $checkInTime > $workStartTime;
@@ -50,7 +49,7 @@ class AttendanceController extends Controller
         //     'work_start_time' => $workStartTime,
         //     'is_late' => $isLate
         // ]);
-
+        
         $attendance = Attendance::create([
             'account_id' => Auth::id(),
             'type' => 'clock_in',
@@ -76,10 +75,10 @@ class AttendanceController extends Controller
                 'review_status' => 'pending',
             ]);
         }
-
+        
         return success('Clock in recorded successfully', $attendance);
     }
-
+    
     // Clock Out
     public function clockOut(Request $request)
     {
@@ -89,8 +88,14 @@ class AttendanceController extends Controller
             'longitude' => 'required|numeric|between:-180,180',
             'photo_path' => 'required|string|max:255',
             'auto_clockout' => 'boolean',
+            'description' => 'nullable|string|max:500',
         ]);
-
+        
+        $timestamp = Carbon::parse($validated['timestamp']);
+        $checkOutTime = $timestamp->format('H:i:s');
+        $workEndTime = '17:00:00';
+        $autoclockout = $checkOutTime > $workEndTime;
+        
         $attendance = Attendance::create([
             'account_id' => Auth::id(),
             'type' => 'clock_out',
@@ -101,13 +106,18 @@ class AttendanceController extends Controller
             'status' => 'approved',
             'auto_clockout' => $validated['auto_clockout'] ?? false,
         ]);
-
-        // Kalau auto_clockout true → simpan reason otomatis
-        if (!empty($validated['auto_clockout']) && $validated['auto_clockout'] === true) {
+        
+        if ($autoclockout) {
+            if (empty($validated['description'])) {
+                return response()->json([
+                    'message' => 'You didn\'t clock out. Please provide a description for auto clockout.'
+                ], 422);
+            }
+            
             AttendanceReason::create([
                 'attendance_id' => $attendance->id,
                 'reason_type' => 'auto_clockout',
-                'description' => 'Automatic clock-out triggered (no manual action).',
+                'description' => $validated['description'],
                 'review_status' => 'pending',
             ]);
         }
