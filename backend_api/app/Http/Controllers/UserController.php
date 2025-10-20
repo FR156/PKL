@@ -2,86 +2,84 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    // List semua user
+    // GET /users
     public function index()
     {
-        $users = User::all();
-        return response()->json($users);
+        $users = User::with('account')->get();
+        return success('Users retrieved successfully', $users);
     }
 
-    // Create user baru
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'role' => 'required|string|exists:roles,name',
-        ]);
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        // Assign role otomatis
-        $user->assignRole($request->role);
-
-        return response()->json([
-            'message' => 'User created successfully',
-            'user' => $user
-        ]);
-    }
-
-    // Show user by ID
+    // GET /users/{id}
     public function show($id)
     {
-        $user = User::with('roles', 'permissions')->findOrFail($id);
-        return response()->json($user);
-    }
+        $user = User::with('account')->find($id);
 
-    // Update user
-    public function update(Request $request, $id)
-    {
-        $user = User::findOrFail($id);
-
-        $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $id,
-            'password' => 'sometimes|string|min:6',
-            'role' => 'sometimes|string|exists:roles,name',
-        ]);
-
-        if($request->has('name')) $user->name = $request->name;
-        if($request->has('email')) $user->email = $request->email;
-        if($request->has('password')) $user->password = Hash::make($request->password);
-        $user->save();
-
-        if($request->has('role')) {
-            $user->syncRoles([$request->role]); // replace old role
+        if (! $user) {
+            return error('User not found');
         }
 
-        return response()->json([
-            'message' => 'User updated successfully',
-            'user' => $user
-        ]);
+        return success('User retrieved successfully', $user);
     }
 
-    // Delete user
+    // POST /users
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'account_id' => 'nullable|exists:accounts,id',
+            'name' => 'required|string|max:255',
+            'nik' => 'nullable|string|unique:users,nik',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|unique:users,email',
+            'gender' => 'nullable|in:male,female',
+            'birth_place' => 'nullable|string|max:255',
+            'birth_date' => 'nullable|date',
+            'position' => 'nullable|string|max:255',
+            'division' => 'nullable|string|max:255',
+            'hired_at' => 'nullable|date',
+            'employment_status' => 'nullable|in:active,resigned,terminated,retired',
+        ]);
+
+        $user = User::create($validated);
+        return success('User created successfully', $user);
+    }
+
+    // PUT /users/{id}
+    public function update(Request $request, $id)
+    {
+        $user = User::find($id);
+
+        if (! $user) {
+            return error('User not found');
+        }
+
+        $validated = $request->validate([
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
+            'position' => 'nullable|string|max:255',
+            'division' => 'nullable|string|max:255',
+            'employment_status' => 'nullable|in:active,resigned,terminated,retired',
+            'resigned_at' => 'nullable|date',
+        ]);
+
+        $user->update($validated);
+        return success('User updated successfully', $user);
+    }
+
+    // DELETE /users/{id}
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
-        $user->delete();
+        $user = User::find($id);
 
-        return response()->json([
-            'message' => 'User deleted successfully'
-        ]);
+        if (! $user) {
+            return error('User not found');
+        }
+
+        $user->delete();
+        return success('User deleted successfully');
     }
 }

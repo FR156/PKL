@@ -15,7 +15,7 @@ return [
 
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'sanctum'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'passwords' => env('AUTH_PASSWORD_BROKER', 'accounts'),
     ],
 
     /*
@@ -38,7 +38,7 @@ return [
     'guards' => [
         'sanctum' => [
             'driver' => 'sanctum',
-            'provider' => 'users',
+            'provider' => 'accounts',
         ],
     ],
 
@@ -60,9 +60,9 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'accounts' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => env('AUTH_MODEL', App\Models\Account::class),
         ],
 
         // 'users' => [
@@ -91,8 +91,8 @@ return [
     */
 
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
+        'accounts' => [
+            'provider' => 'accounts',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,
@@ -111,5 +111,21 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Token Expiration Handling
+    |--------------------------------------------------------------------------
+    | Here you may define how your application handles token expiration
+    | for authentication tokens. This includes settings for access tokens
+    | and refresh tokens if applicable.
+    |-------------------------------------------------------------------------
+    */
+
+    'token_expiry' => [
+        'access'  => env('ACCESS_TOKEN_LIFETIME', 1800), // 30 minutes
+        'refresh' => env('REFRESH_TOKEN_LIFETIME', 86400), // 24 hours
+    ],
+
 
 ];

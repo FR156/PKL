@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
-            HandleCors::class,
+            HandleCors::class
         ]);
 
         $middleware->alias([
@@ -29,6 +30,34 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        //
-    })->create();
+    ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->render(function (Throwable $e, Request $request) {
+            // Get the exception class name
+            $className = get_class($e);
+            
+            // Get our custom handlers
+            $handlers = App\Exceptions\ApiExceptionHandler::$handlers;
+
+            // Check if we have a specific handler for this exception
+            if (array_key_exists($className, $handlers)) {
+                $method = $handlers[$className];
+                $apiHandler = new App\Exceptions\ApiExceptionHandler();
+                return $apiHandler->$method($e, $request);
+            }
+
+            // Gunakan helper errorException agar format seragam
+            return errorException(
+                type: basename(get_class($e)),
+                status: $e->getCode() ?: 500,
+                message: $e->getMessage() ?: 'An unexpected error occurred',
+                extra: app()->environment('local', 'testing') ? [
+                    'debug' => [
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString(),
+                    ]  
+                ] : []
+            );
+        });
+    })
+    ->create();
