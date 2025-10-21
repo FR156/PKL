@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('attendance_id')->constrained('attendances')->onDelete('cascade');
             $table->enum('reason_type', ['late', 'auto_clockout']);
-            $table->text('description')->nullable();
+            $table->text('description');
             $table->enum('review_status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->unsignedBigInteger('reviewed_by')->nullable();
             $table->timestamp('reviewed_at')->nullable();

@@ -44,7 +44,7 @@ class AttendanceReasonController extends Controller
         $reason = AttendanceReason::findOrFail($id);
         $reason->update([
             'review_status' => $validated['review_status'],
-            'reviewed_by' => $request->user()->id,
+            'reviewed_by' => 999, // dummy supervisor id
             'reviewed_at' => now(),
         ]);
 
