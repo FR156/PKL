@@ -8,6 +8,7 @@ use App\Models\AttendanceReason;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
 {
@@ -36,6 +37,8 @@ class AttendanceController extends Controller
             'photo_path' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
         ]);
+
+        $this->validateClockIn($request);
 
         $timestamp = Carbon::parse($validated['timestamp']);
         $checkInTime = $timestamp->format('H:i:s');
@@ -93,20 +96,15 @@ class AttendanceController extends Controller
             'longitude' => 'required|numeric|between:-180,180',
             'photo_path' => 'required|string|max:255',
             'auto_clockout' => 'boolean',
-            'description' => 'nullable|string|max:500',
         ]);
+
+        $this->validateClockOut($request);
         
         $timestamp = Carbon::parse($validated['timestamp']);
         $checkOutTime = $timestamp->format('H:i:s');
         $workEndTime = '17:00:00';
         $autoclockout = $checkOutTime > $workEndTime;
-        
-        if (empty($validated['description'])) {
-            return response()->json([
-                'message' => 'You didn\'t clock out. Please provide a description for auto clockout.'
-            ], 422);
-        }
-        
+
         try {
             DB::beginTransaction();
             
@@ -125,7 +123,6 @@ class AttendanceController extends Controller
                 AttendanceReason::create([
                     'attendance_id' => $attendance->id,
                     'reason_type' => 'auto_clockout',
-                    'description' => $validated['description'],
                     'review_status' => 'pending',
                 ]);
             }
@@ -183,5 +180,50 @@ class AttendanceController extends Controller
         $attendance->delete();
 
         return success('Attendance deleted successfully');
+    }
+
+    protected function validateClockIn(Request $request)
+    {
+        $timestamp = Carbon::parse($request->timestamp);
+        $dateToCheck = $timestamp->toDateString(); // Get YYYY-MM-DD from the provided timestamp
+        
+        $existingClockIn = Attendance::where('account_id', Auth::id())
+            ->where('type', 'clock_in')
+            ->whereDate('timestamp', $dateToCheck)
+            ->first();
+
+        if ($existingClockIn) {
+            throw ValidationException::withMessages([
+                'type' => ['You have already clocked in for this date.']
+            ]);
+        }
+    }
+
+    protected function validateClockOut(Request $request)
+    {
+        $timestamp = Carbon::parse($request->timestamp);
+        $dateToCheck = $timestamp->toDateString();
+        
+        $todayClockIn = Attendance::where('account_id', Auth::id())
+            ->where('type', 'clock_in')
+            ->whereDate('timestamp', $dateToCheck)
+            ->first();
+
+        $todayClockOut = Attendance::where('account_id', Auth::id())
+            ->where('type', 'clock_out')
+            ->whereDate('timestamp', $dateToCheck)
+            ->first();
+
+        if (!$todayClockIn) {
+            throw ValidationException::withMessages([
+                'type' => ['You need to clock in first before clocking out.']
+            ]);
+        }
+
+        if ($todayClockOut) {
+            throw ValidationException::withMessages([
+                'type' => ['You have already clocked out for this date.']
+            ]);
+        }
     }
 }
