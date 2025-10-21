@@ -67,7 +67,8 @@ performa : skor peforma , tugas yang selesai , tugas pending , ada daftar tugas 
 histori login : status terlambat / tepat waktu / pulang cepat 
 tambahan : absensi otomatis tertutup sesuai jam yang di tentukam , kalau ga clock out dia di beri waktu untuk mengisi alasan kenapa dia ga clock out 
 absensi : buat izin telat, cepat pulang
-izin cepat pulang dan terlambat , foto judul deskripsi -> manager approve
+izin cepat pulang dan terlambat , foto judul deskripsi -> manager approve kalau dia izin cepat pulang itu dia uda di hitung clock out dan masuk ke manager izinnya keterangan terlambat di buat jelas
+ekspor pdf nya jelas informasi pemotongan dll
 
 manager
 ringkasan : total karyawan, cuti pending, terlambat, aktifitas absen, karyawan aktif
@@ -80,6 +81,9 @@ absensi saya : sama kaya karyawan
 profil : sama kaya karyawan beda divisi 
 gaji : fitur tambahan naik gaji
 persetujuan permisi terlambat dan cepat pulang
+atur fitur 
+cuti : bisa atur cuti ( custom )
+bisa potong gaji, judul pemotongan, contohnya bpjs dan bisa milih karyawan siapa dan divisi mana
 
 supervisor
 ringkasan : total karyawan , total karyawan aktif , tugas yang di pending, terlambat (absensi perlu koreksi di hapus)
@@ -93,3 +97,11 @@ loadingnya punya masih punya pribadi
 
 security
 cari semua kerentanan dan ganti -> refrector code
+
+responsif 
+header responsif dan perpaduan warna
+
+jarak kantor di ubah jadi sesuai keperluan, tutorial js
+
+
+

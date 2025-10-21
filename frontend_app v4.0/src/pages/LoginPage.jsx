@@ -149,7 +149,7 @@ const LoginPage = ({ handleLogin, isLoading }) => {
                         {/* Optional: Tampilkan pesan validasi di bawah input password saat fokus */}
                         {isPasswordFocused && password.length > 0 && (
                             <p className={`mt-1 text-xs text-left ${isPasswordValid ? 'text-green-600' : 'text-red-600'}`}>
-                                {isPasswordValid ? 'Password kuat.' : `Minimal 8 karakter. Kurang ${8 - password.length} karakter.`}
+                                {isPasswordValid ? '' : `Minimal 8 karakter. Kurang ${8 - password.length} karakter.`}
                             </p>
                         )}
                     </div>
