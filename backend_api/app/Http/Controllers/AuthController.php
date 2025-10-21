@@ -47,7 +47,7 @@ class AuthController extends Controller
             ->values()
             ->toArray();
 
-        return success('Login successful', [
+        return success('Login successful',  [
             'id'          => $account->id,
             'name'        => $account->name,
             'permissions' => $permissions,
@@ -55,7 +55,7 @@ class AuthController extends Controller
                 'access_token'  => $accessToken,
                 'refresh_token' => $refreshToken,
                 'expires_at'    => now()->addSeconds($accessTTL)->toISOString(),
-            ],
+            ]
         ]);
     }
 
