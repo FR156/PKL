@@ -1,29 +1,30 @@
+// src/api/authService.js
 import axiosClient from "./axiosClient";
 
 /**
  * 🔐 Login user dan simpan access_token + refresh_token ke localStorage.
- * Backend mengembalikan { access_token, refresh_token, user }
+ * Backend mengembalikan data:
+ * {
+ *   token: { access_token, refresh_token, expires_at },
+ *   id, name, permissions
+ * }
  */
 export const login = async (name, password) => {
   try {
     const response = await axiosClient.post("/login", { name, password });
+    const { token, id, name: username, permissions } = response.data.data;
 
-    const { access_token, refresh_token, user } = response.data;
+    if (token?.access_token && token?.refresh_token) {
+      localStorage.setItem("access_token", token.access_token);
+      localStorage.setItem("refresh_token", token.refresh_token);
 
-    if (access_token && refresh_token) {
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
-
-      // Set header Authorization default
-      axiosClient.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${access_token}`;
+      axiosClient.defaults.headers.common.Authorization = `Bearer ${token.access_token}`;
     }
 
-    return { user, access_token, refresh_token };
+    return { user: { id, username, permissions }, token };
   } catch (error) {
     console.error("❌ Login failed:", error.response?.data || error.message);
-    throw error;
+    return Promise.reject(error);
   }
 };
 
@@ -36,10 +37,9 @@ export const logout = async () => {
   } catch (error) {
     console.warn("⚠️ Logout request failed:", error.response?.data || error.message);
   } finally {
-    // Hapus token di localStorage & header Authorization
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    delete axiosClient.defaults.headers.common["Authorization"];
+    delete axiosClient.defaults.headers.common.Authorization;
   }
 };
 
@@ -52,33 +52,43 @@ export const getUser = async () => {
     return response.data;
   } catch (error) {
     console.error("❌ Get user failed:", error.response?.data || error.message);
-    throw error;
+    return Promise.reject(error);
   }
 };
 
 /**
- * 🔁 Gunakan refresh_token untuk minta access_token baru
+ * 🔁 Gunakan refresh_token untuk minta access_token baru.
+ * Backend expects the refresh token via Authorization: Bearer <refresh_token>
  */
 export const refreshToken = async () => {
+  const refreshToken = localStorage.getItem("refresh_token");
+  if (!refreshToken) {
+    console.error("❌ No refresh token found");
+    return null;
+  }
+
   try {
-    const refresh_token = localStorage.getItem("refresh_token");
-    if (!refresh_token) throw new Error("No refresh token found");
+    // Kirim refresh_token di header Authorization (bukan body!)
+    const response = await axiosClient.post("/refresh", null, {
+      headers: {
+        Authorization: `Bearer ${refreshToken}`,
+      },
+    });
 
-    const response = await axiosClient.post("/refresh", { refresh_token });
-
-    const newAccessToken = response.data.access_token;
-    if (!newAccessToken) throw new Error("No new access token returned");
+    const newAccessToken = response.data.data?.token?.access_token;
+    if (!newAccessToken) {
+      console.error("❌ No new access token returned");
+      return null;
+    }
 
     localStorage.setItem("access_token", newAccessToken);
-    axiosClient.defaults.headers.common[
-      "Authorization"
-    ] = `Bearer ${newAccessToken}`;
-
+    axiosClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
     console.log("🔁 Access token refreshed successfully");
+
     return newAccessToken;
   } catch (error) {
     console.error("❌ Token refresh failed:", error.response?.data || error.message);
-    throw error;
+    return null;
   }
 };
 
@@ -88,6 +98,6 @@ export const refreshToken = async () => {
 export const setupAxiosAuthHeader = () => {
   const token = localStorage.getItem("access_token");
   if (token) {
-    axiosClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    axiosClient.defaults.headers.common.Authorization = `Bearer ${token}`;
   }
 };

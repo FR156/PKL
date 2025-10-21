@@ -13,7 +13,7 @@ return new class extends Migration
             $table->id();
 
             // Identitas dasar akun
-            $table->string('name'); 
+            $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
@@ -42,7 +42,7 @@ return new class extends Migration
             $table->string('ip_address', 45)->nullable();
 
             // perbaikan: typo 'account_agent' → 'user_agent'
-            $table->text('user_agent')->nullable(); 
+            $table->text('user_agent')->nullable();
 
             $table->longText('payload');
             $table->integer('last_activity')->index();

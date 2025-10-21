@@ -1,7 +1,5 @@
 <?php
-
 namespace Database\Seeders;
-
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 
@@ -10,32 +8,26 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
-            //Public
             'login',
-
-            // Basic user actions
             'get user',
             'logout',
-
-            // Account management
             'view accounts',
             'create accounts',
             'edit accounts',
             'delete accounts',
-
-            // Role management
             'view roles',
             'create roles',
             'edit roles',
             'delete roles',
-
-            // Assign permissions to role
             'assign permissions to role',
             'view role permissions',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'sanctum', // <-- penting
+            ]);
         }
 
         $this->command->info('Permissions seeded successfully!');

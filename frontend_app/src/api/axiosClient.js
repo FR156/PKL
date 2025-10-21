@@ -1,18 +1,17 @@
+// src/api/axiosClient.js
 import axios from "axios";
 import { refreshToken } from "./authService";
 
-// Buat instance axios utama
 const axiosClient = axios.create({
-  baseURL: "http://127.0.0.1:8000/api", // Ganti kalau backend beda
-  timeout: 5000,
-  withCredentials: true,
+  baseURL: "http://127.0.0.1:8000/api", // sesuaikan backend Mas
+  timeout: 10000,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
   },
 });
 
-// 🟢 Interceptor Request — otomatis tambah Authorization header kalau ada token
+// 🟢 Request Interceptor
 axiosClient.interceptors.request.use(
   (config) => {
     const accessToken = localStorage.getItem("access_token");
@@ -24,37 +23,58 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🔁 Interceptor Response — kalau token kadaluarsa (401), refresh otomatis
+// 🔁 Response Interceptor
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Cegah infinite loop refresh
+    // Kalau token invalid / expired
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      console.warn("⚠️ Access token expired, attempting refresh...");
+
       try {
-        // Coba refresh token
         const newToken = await refreshToken();
 
-        // Kalau berhasil dapat token baru, update header dan ulang request
-        if (newToken) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          axiosClient.defaults.headers.Authorization = `Bearer ${newToken}`;
-          return axiosClient(originalRequest);
+        if (!newToken) {
+          console.error("❌ Refresh token missing or invalid");
+          handleLogout();
+          return Promise.reject(error);
         }
-      } catch (err) {
-        console.error("❌ Refresh token failed:", err);
-        // Hapus semua data & arahkan ke login
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        window.location.href = "/login";
+
+        console.log("✅ Token refreshed successfully");
+
+        // Simpan token baru
+        localStorage.setItem("access_token", newToken);
+        axiosClient.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+        // Ulang request lama
+        return axiosClient(originalRequest);
+      } catch (refreshError) {
+        console.error("❌ Refresh token request failed:", refreshError);
+        handleLogout();
+        return Promise.reject(refreshError);
       }
+    }
+
+    // Kalau refresh token juga expired
+    if (error.response?.status === 401 && originalRequest._retry) {
+      console.warn("⚠️ Second 401 detected, forcing logout...");
+      handleLogout();
     }
 
     return Promise.reject(error);
   }
 );
+
+// 🔒 Fungsi bantu logout aman
+function handleLogout() {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+  window.location.href = "/login";
+}
 
 export default axiosClient;
