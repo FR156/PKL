@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('name');                 // Nama lengkap
             $table->string('nik')->nullable()->unique(); // Nomor induk karyawan
             $table->string('phone')->nullable();
-            $table->string('email')->nullable();    // Kalau berbeda dari akun login
+            // $table->string('email')->nullable();    // Kalau berbeda dari akun login
             $table->text('address')->nullable();
             $table->enum('gender', ['male', 'female'])->nullable();
             $table->string('birth_place')->nullable();

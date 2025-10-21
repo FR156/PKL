@@ -3,7 +3,7 @@
 // Helper functions untuk membuat response JSON standard di logika bisnis
 
 if (!function_exists('success')) {
-    function success($message, $data = null, $status = 200)
+    function success($message, $status = 200, $data = null)
     {
         $response = [
             'success' => [
@@ -23,7 +23,7 @@ if (!function_exists('success')) {
 
 
 if (!function_exists('error')) {
-    function error($message, $data = null, $status = 400)
+    function error($message, $status = 400, $data = null)
     {
         $response = [
             'error' => [
