@@ -39,6 +39,7 @@ class AttendanceController extends Controller
         ]);
 
         $this->validateClockIn($request);
+        $this->validateClockInTime($request);
 
         $timestamp = Carbon::parse($validated['timestamp']);
         $checkInTime = $timestamp->format('H:i:s');
@@ -99,6 +100,7 @@ class AttendanceController extends Controller
         ]);
 
         $this->validateClockOut($request);
+        $this->validateClockOutTime($request);
         
         $timestamp = Carbon::parse($validated['timestamp']);
         $checkOutTime = $timestamp->format('H:i:s');
@@ -223,6 +225,50 @@ class AttendanceController extends Controller
         if ($todayClockOut) {
             throw ValidationException::withMessages([
                 'type' => ['You have already clocked out for this date.']
+            ]);
+        }
+    }
+
+    protected function validateClockInTime(Request $request)
+    {
+        $timestamp = Carbon::parse($request->timestamp);
+        $checkInTime = $timestamp->format('H:i:s');
+        
+        // Define allowed clock-in time range (e.g., 6:00 AM to 10:00 AM)
+        $earliestClockIn = '06:00:00';
+        $latestClockIn = '10:00:00';
+        
+        if ($checkInTime < $earliestClockIn) {
+            throw ValidationException::withMessages([
+                'timestamp' => ['Clock in is only allowed after ' . Carbon::parse($earliestClockIn)->format('g:i A')]
+            ]);
+        }
+        
+        if ($checkInTime > $latestClockIn) {
+            throw ValidationException::withMessages([
+                'timestamp' => ['Clock in is only allowed before ' . Carbon::parse($latestClockIn)->format('g:i A')]
+            ]);
+        }
+    }
+
+    protected function validateClockOutTime(Request $request)
+    {
+        $timestamp = Carbon::parse($request->timestamp);
+        $checkOutTime = $timestamp->format('H:i:s');
+        
+        // Define allowed clock-out time range (e.g., 4:00 PM to 9:00 PM)
+        $earliestClockOut = '16:00:00';
+        $latestClockOut = '21:00:00';
+        
+        if ($checkOutTime < $earliestClockOut) {
+            throw ValidationException::withMessages([
+                'timestamp' => ['Clock out is only allowed after ' . Carbon::parse($earliestClockOut)->format('g:i A')]
+            ]);
+        }
+        
+        if ($checkOutTime > $latestClockOut) {
+            throw ValidationException::withMessages([
+                'timestamp' => ['Clock out is only allowed before ' . Carbon::parse($latestClockOut)->format('g:i A')]
             ]);
         }
     }
