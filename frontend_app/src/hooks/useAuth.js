@@ -1,126 +1,120 @@
-// src/hooks/useAuth.js
-import { useState, useEffect, useRef } from "react";
-import { showSwal } from "../utils/constants";
-import { login, logout, getUser, setupAxiosAuthHeader } from "../api/authService";
+import { useState, useEffect } from 'react';
+import { 
+    DUMMY_AUTH, 
+    INITIAL_EMPLOYEES, 
+    INITIAL_MANAGERS, 
+    INITIAL_PENDING_LEAVE, // Import showSwal disatukan ke constants
+} from '../utils/constants'; 
+import { showSwal } from '../utils/swal';
+
+
+// Helper function untuk lazy initialization state
+// Mengambil data dari localStorage atau menggunakan data awal (INITIAL_...)
+const getInitialState = (key, initialData) => {
+    const saved = localStorage.getItem(key);
+    // Jika ada data di localStorage, gunakan data tersebut. Jika tidak, gunakan initialData.
+    return saved ? JSON.parse(saved) : initialData;
+};
 
 export const useAuth = () => {
-  const [authUser, setAuthUser] = useState(
-    JSON.parse(localStorage.getItem("authUser")) || null
-  );
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [authUser, setAuthUser] = useState(
+        JSON.parse(localStorage.getItem('authUser'))
+    );
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // ✨ FIX: Menggunakan lazy initializer function untuk inisialisasi data
+    // Ini menggantikan logika useState dan useEffect inisialisasi yang lama
+    const [employees, setEmployees] = useState(() => getInitialState('employees', INITIAL_EMPLOYEES));
+    const [managers, setManagers] = useState(() => getInitialState('managers', INITIAL_MANAGERS));
+    const [pendingLeave, setPendingLeave] = useState(() => getInitialState('pendingLeave', INITIAL_PENDING_LEAVE));
+    
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  // Simpan timer refresh agar bisa dibatalkan
-  const refreshTimerRef = useRef(null);
+    // ✨ CATATAN: useEffect inisialisasi (yang memeriksa localStorage === null) DIHAPUS 
+    // karena sudah ditangani oleh lazy initialization di atas.
 
-  // =====================
-  // 🟢 LOGIN FUNCTION
-  // =====================
-  const handleLogin = async (email, password) => {
-    setIsLoading(true);
-    try {
-      const res = await authService.login({ email, password });
-      const userData = res.user;
-      const tokenData = {
-        access_token: res.access_token,
-        refresh_token: res.refresh_token,
-        expired_at: res.expired_at,
-      };
+    // Sync state ke localStorage (Effect ini tetap dibutuhkan untuk menyimpan perubahan)
+    useEffect(() => {
+        localStorage.setItem('authUser', JSON.stringify(authUser));
+        localStorage.setItem('employees', JSON.stringify(employees));
+        localStorage.setItem('managers', JSON.stringify(managers));
+        localStorage.setItem('pendingLeave', JSON.stringify(pendingLeave));
+    }, [authUser, employees, managers, pendingLeave]);
 
-      // Simpan ke localStorage
-      localStorage.setItem("authUser", JSON.stringify(userData));
-      localStorage.setItem("token", tokenData.access_token);
-      localStorage.setItem("refresh_token", tokenData.refresh_token);
-      localStorage.setItem("expired_at", tokenData.expired_at);
+    // --- Update handleLogin jadi dinamis ---\r\n
+    const handleLogin = (username, password) => {
+        setIsLoading(true);
 
-      setAuthUser(userData);
-      showSwal("Login Berhasil!", `Selamat datang, ${userData.name}!`, "success", 2000);
+        setTimeout(() => {
+            let foundUser = null;
 
-      // Jadwalkan refresh otomatis
-      scheduleTokenRefresh(tokenData.expired_at);
-    } catch (error) {
-      console.error("Login error:", error);
-      showSwal("Login gagal", "Email atau password salah", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+            // Loop melalui semua role untuk menemukan user
+            for (const key in DUMMY_AUTH) {
+                const user = DUMMY_AUTH[key];
+                if (user.username === username && user.password === password) {
+                    // Cari data employee/manager lengkap dari state utama (employees/managers)
+                    if (user.role === 'employee') {
+                        foundUser = employees.find(e => e.id === user.id) || user;
+                    } else if (user.role === 'manager') {
+                        foundUser = managers.find(m => m.id === user.id) || user;
+                    } else {
+                        // Owner/Supervisor: Gunakan data dari DUMMY_AUTH
+                        foundUser = user;
+                    }
+                    
+                    // Tambahkan riwayat login
+                    const loginRecord = { time: new Date().toISOString(), method: 'Username/Password' };
+                    // Ambil riwayat lama atau array kosong, lalu tambahkan yang baru (maks 5)
+                    const currentHistory = foundUser.loginHistory || [];
+                    foundUser.loginHistory = [loginRecord, ...currentHistory.slice(0, 4)]; 
+                    
+                    // Update state employee/manager di state utama
+                    if (user.role === 'employee') {
+                        setEmployees(prev => prev.map(e => e.id === foundUser.id ? foundUser : e));
+                    } else if (user.role === 'manager') {
+                        setManagers(prev => prev.map(m => m.id === foundUser.id ? foundUser : m));
+                    }
 
-  // =====================
-  // 🟠 LOGOUT FUNCTION
-  // =====================
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch (e) {
-      console.warn("Logout error:", e);
-    }
-    clearRefreshTimer();
-    localStorage.clear();
-    setAuthUser(null);
-    setIsLogoutModalOpen(false);
-    showSwal("Logout Sukses", "Anda telah keluar.", "success", 1500);
-  };
+                    break;
+                }
+            }
 
-  const handleLogoutClick = () => {
-    setIsLogoutModalOpen(true);
-  };
+            if (foundUser) {
+                setAuthUser(foundUser);
+                showSwal('Login Berhasil!', `Selamat datang, ${foundUser.name} (${foundUser.role.toUpperCase()})!`, 'success', 2000);
+            } else {
+                showSwal('Login Gagal', 'Username atau password salah.', 'error');
+            }
 
-  // =====================
-  // 🔄 REFRESH TOKEN AUTO
-  // =====================
-  const scheduleTokenRefresh = (expiredAt) => {
-    clearRefreshTimer();
-    const expireTime = new Date(expiredAt).getTime();
-    const now = Date.now();
-    const refreshTime = expireTime - now - 60000; // refresh 1 menit sebelum expired
+            setIsLoading(false);
+        }, 1000);
+    };
 
-    if (refreshTime > 0) {
-      refreshTimerRef.current = setTimeout(async () => {
-        try {
-          const res = await authService.refreshToken();
-          const newToken = res.access_token;
-          const newExpiredAt = res.expired_at;
+    const handleLogout = () => {
+        localStorage.removeItem('authUser');
+        setAuthUser(null);
+        setIsLogoutModalOpen(false);
+        showSwal('Logout Sukses', 'Anda telah berhasil keluar.', 'success', 1500);
+    };
 
-          localStorage.setItem("token", newToken);
-          localStorage.setItem("expired_at", newExpiredAt);
+    const handleLogoutClick = () => {
+        setIsLogoutModalOpen(true);
+    };
 
-          showSwal("Token diperbarui", "Sesi login kamu tetap aktif.", "success", 1000);
-          scheduleTokenRefresh(newExpiredAt);
-        } catch (err) {
-          console.error("Gagal refresh token:", err);
-          showSwal("Sesi habis", "Silakan login ulang.", "warning");
-          handleLogout();
-        }
-      }, refreshTime);
-    }
-  };
-
-  const clearRefreshTimer = () => {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-  };
-
-  // =====================
-  // 🔁 USE EFFECT
-  // =====================
-  useEffect(() => {
-    if (authUser) {
-      const expiredAt = localStorage.getItem("expired_at");
-      if (expiredAt) {
-        scheduleTokenRefresh(expiredAt);
-      }
-    }
-    return () => clearRefreshTimer();
-  }, [authUser]);
-
-  return {
-    authUser,
-    setAuthUser,
-    isLoading,
-    isLogoutModalOpen,
-    setIsLogoutModalOpen,
-    handleLogin,
-    handleLogout,
-    handleLogoutClick,
-  };
+    return {
+        authUser,
+        setAuthUser,
+        isLoading,
+        employees,
+        setEmployees,
+        managers,
+        setManagers,
+        pendingLeave,
+        setPendingLeave,
+        isLogoutModalOpen,
+        setIsLogoutModalOpen,
+        handleLogin,
+        handleLogout,
+        handleLogoutClick,
+    };
 };
