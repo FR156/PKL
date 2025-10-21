@@ -117,7 +117,7 @@ const EmployeeDashboard = (props) => {
                 </button>
               </div>
 
-              {/* User Info */}
+              {/* User Info bla bla */}
               <div className="flex items-center mb-6 p-3 bg-white/20 backdrop-blur-xl backdrop-blur-xl rounded-2xl border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)] text-left ">
                 <div className="relative">
                   <img

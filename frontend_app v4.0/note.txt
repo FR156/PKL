@@ -101,7 +101,7 @@ cari semua kerentanan dan ganti -> refrector code
 responsif 
 header responsif dan perpaduan warna
 
-jarak kantor di ubah jadi sesuai keperluan
+jarak kantor di ubah jadi sesuai keperluan, tutorial js
 
 
 
