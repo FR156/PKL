@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\AttendanceReason;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
@@ -41,43 +42,47 @@ class AttendanceController extends Controller
         $workStartTime = '08:00:00';
         $isLate = $checkInTime > $workStartTime;
 
-        // Debugging - add this temporarily to see what's happening
-        // \Log::info('Clock In Debug', [
-        //     'timestamp' => $validated['timestamp'],
-        //     'parsed_timestamp' => $timestamp->toString(),
-        //     'check_in_time' => $checkInTime,
-        //     'work_start_time' => $workStartTime,
-        //     'is_late' => $isLate
-        // ]);
-        
-        $attendance = Attendance::create([
-            'account_id' => Auth::id(),
-            'type' => 'clock_in',
-            'timestamp' => $validated['timestamp'],
-            'latitude' => $validated['latitude'],
-            'longitude' => $validated['longitude'],
-            'photo_path' => $validated['photo_path'],
-            'is_late' => $isLate,
-            'status' => 'approved',
-        ]);
-
-        if ($isLate) {
-            if (empty($validated['description'])) {
-                return response()->json([
-                    'message' => 'You are late. Please provide a description for lateness.'
-                ], 422);
-            }
-
-            AttendanceReason::create([
-                'attendance_id' => $attendance->id,
-                'reason_type' => 'late',
-                'description' => $validated['description'],
-                'review_status' => 'pending',
-            ]);
+        if ($isLate && empty($validated['description'])) {
+            return response()->json([
+                'message' => 'You are late. Please provide a description for lateness.'
+            ], 422);
         }
-        
-        return success('Clock in recorded successfully', $attendance);
+
+        try {
+            DB::beginTransaction();
+
+            $attendance = Attendance::create([
+                'account_id' => Auth::id(),
+                'type' => 'clock_in',
+                'timestamp' => $validated['timestamp'],
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'photo_path' => $validated['photo_path'],
+                'is_late' => $isLate,
+                'status' => 'approved',
+            ]);
+    
+            if ($isLate) {
+                AttendanceReason::create([
+                    'attendance_id' => $attendance->id,
+                    'reason_type' => 'late',
+                    'description' => $validated['description'],
+                    'review_status' => 'pending',
+                ]);
+            }
+    
+            DB::commit();
+            return success('Clock in recorded successfully', $attendance);
+
+        } catch (\Throwable $e) {
+            DB::rollBack(); 
+            return response()->json([
+                'message' => 'Something went wrong while recording attendance.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
+
     
     // Clock Out
     public function clockOut(Request $request)
@@ -96,33 +101,45 @@ class AttendanceController extends Controller
         $workEndTime = '17:00:00';
         $autoclockout = $checkOutTime > $workEndTime;
         
-        $attendance = Attendance::create([
-            'account_id' => Auth::id(),
-            'type' => 'clock_out',
-            'timestamp' => $validated['timestamp'],
-            'latitude' => $validated['latitude'],
-            'longitude' => $validated['longitude'],
-            'photo_path' => $validated['photo_path'],
-            'status' => 'approved',
-            'auto_clockout' => $validated['auto_clockout'] ?? false,
-        ]);
+        if (empty($validated['description'])) {
+            return response()->json([
+                'message' => 'You didn\'t clock out. Please provide a description for auto clockout.'
+            ], 422);
+        }
         
-        if ($autoclockout) {
-            if (empty($validated['description'])) {
-                return response()->json([
-                    'message' => 'You didn\'t clock out. Please provide a description for auto clockout.'
-                ], 422);
+        try {
+            DB::beginTransaction();
+            
+            $attendance = Attendance::create([
+                'account_id' => Auth::id(),
+                'type' => 'clock_out',
+                'timestamp' => $validated['timestamp'],
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'photo_path' => $validated['photo_path'],
+                'status' => 'approved',
+                'auto_clockout' => $validated['auto_clockout'] ?? false,
+            ]);
+    
+            if ($autoclockout) {
+                AttendanceReason::create([
+                    'attendance_id' => $attendance->id,
+                    'reason_type' => 'auto_clockout',
+                    'description' => $validated['description'],
+                    'review_status' => 'pending',
+                ]);
             }
             
-            AttendanceReason::create([
-                'attendance_id' => $attendance->id,
-                'reason_type' => 'auto_clockout',
-                'description' => $validated['description'],
-                'review_status' => 'pending',
-            ]);
-        }
+            DB::commit();
+            return success('Clock out recorded successfully', $attendance);
 
-        return success('Clock out recorded successfully', $attendance);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Something went wrong while recording attendance.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
 
