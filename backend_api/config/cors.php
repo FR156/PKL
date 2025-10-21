@@ -20,7 +20,7 @@ return [
 
     // Hanya izinkan domain frontend (ganti sesuai environment)
     'allowed_origins' => [
-        env('FRONTEND_URL', 'http://localhost:3000'),
+        env('FRONTEND_URL', 'http://localhost:5173'),
     ],
 
     'allowed_origins_patterns' => [],

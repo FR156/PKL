@@ -1,9 +1,10 @@
 // src/api/axiosClient.js
 import axios from "axios";
 import { refreshToken } from "./authService";
+import useAuthStore from "../store/authStore";
 
 const axiosClient = axios.create({
-  baseURL: "http://127.0.0.1:8000/api", // sesuaikan backend Mas
+  baseURL: "http://127.0.0.1:8000/api",
   timeout: 10000,
   headers: {
     Accept: "application/json",
@@ -14,10 +15,16 @@ const axiosClient = axios.create({
 // 🟢 Request Interceptor
 axiosClient.interceptors.request.use(
   (config) => {
-    const accessToken = localStorage.getItem("access_token");
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    const token = useAuthStore.getState().access_token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // 🔒 Always include device name
+    if (!config.headers['X-Device-Name']) {
+      config.headers['X-Device-Name'] = 'web';
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)
@@ -28,53 +35,62 @@ axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const { refresh_token, setUserData, logout } = useAuthStore.getState();
 
-    // Kalau token invalid / expired
+    // 🔒 Skip if request was aborted
+    if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
+      return Promise.reject(error);
+    }
+
+    // Kalau access token expired (401) dan belum di-retry
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-
       console.warn("⚠️ Access token expired, attempting refresh...");
+
+      // 🔒 Skip refresh untuk endpoint login (karena belum punya token)
+      if (originalRequest.url === '/login') {
+        return Promise.reject(error);
+      }
 
       try {
         const newToken = await refreshToken();
 
-        if (!newToken) {
-          console.error("❌ Refresh token missing or invalid");
-          handleLogout();
-          return Promise.reject(error);
+        if (newToken) {
+          console.log("✅ Token refreshed successfully");
+
+          // Update header token untuk request selanjutnya
+          axiosClient.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+          // Ulang request lama
+          return axiosClient(originalRequest);
+        } else {
+          throw new Error('Refresh token failed');
         }
-
-        console.log("✅ Token refreshed successfully");
-
-        // Simpan token baru
-        localStorage.setItem("access_token", newToken);
-        axiosClient.defaults.headers.common.Authorization = `Bearer ${newToken}`;
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
-        // Ulang request lama
-        return axiosClient(originalRequest);
       } catch (refreshError) {
         console.error("❌ Refresh token request failed:", refreshError);
-        handleLogout();
+        
+        // 🔒 Force logout hanya jika bukan request login
+        if (originalRequest.url !== '/login') {
+          logout();
+        }
+        
         return Promise.reject(refreshError);
       }
     }
 
-    // Kalau refresh token juga expired
-    if (error.response?.status === 401 && originalRequest._retry) {
-      console.warn("⚠️ Second 401 detected, forcing logout...");
-      handleLogout();
+    // Kalau refresh token juga expired atau error lain
+    if (error.response?.status === 401) {
+      console.warn("⚠️ 401 detected, checking if logout needed...");
+      
+      // 🔒 Jangan logout untuk login endpoint
+      if (originalRequest.url !== '/login') {
+        logout();
+      }
     }
 
     return Promise.reject(error);
   }
 );
-
-// 🔒 Fungsi bantu logout aman
-function handleLogout() {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
-  window.location.href = "/login";
-}
 
 export default axiosClient;

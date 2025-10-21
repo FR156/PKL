@@ -1,19 +1,31 @@
 // src/api/axiosConfig.js
 
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
-// Membuat instance Axios dengan konfigurasi dasar
+// Instance utama axios — digunakan untuk request biasa (tanpa refresh logic)
 const api = axios.create({
-  // WAJIB GANTI jika server Laravel Anda menggunakan port selain 8000
-  baseURL: 'http://localhost:8000/api', 
-  
+  baseURL: 'http://localhost:8000/api', // ganti sesuai port backend Laravel
   headers: {
     'Content-Type': 'application/json',
   },
-  
-  // WAJIB untuk Sanctum: Memungkinkan browser mengirim dan menerima cookies 
-  // (termasuk cookie XSRF-TOKEN dan session ID).
-  withCredentials: true, 
+  withCredentials: true, // wajib untuk Sanctum
 });
+
+// Interceptor request → otomatis sisipkan token
+api.interceptors.request.use(
+  (config) => {
+    const token = useAuthStore.getState().token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Tidak perlu interceptor response di sini,
+// karena refresh token sudah ditangani oleh axiosClient.js
+// Jadi file ini hanya untuk request biasa agar tetap clean dan ringan.
 
 export default api;

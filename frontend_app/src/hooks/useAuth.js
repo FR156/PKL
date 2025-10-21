@@ -1,126 +1,103 @@
-// src/hooks/useAuth.js
-import { useState, useEffect, useRef } from "react";
-import { showSwal } from "../utils/constants";
-import { login, logout, getUser, setupAxiosAuthHeader } from "../api/authService";
+import { useState, useEffect } from 'react';
+import useAuthStore from '../store/authStore'; // Impor useAuthStore
+import { 
+    DUMMY_AUTH, 
+    INITIAL_EMPLOYEES, 
+    INITIAL_MANAGERS, 
+    INITIAL_PENDING_LEAVE,
+} from '../utils/constants'; 
+import { showSwal } from '../utils/swal';
+
+// Helper function untuk lazy initialization state
+const getInitialState = (key, initialData) => {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : initialData;
+};
 
 export const useAuth = () => {
-  const [authUser, setAuthUser] = useState(
-    JSON.parse(localStorage.getItem("authUser")) || null
-  );
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    // Ambil state dari useAuthStore
+    const { user: authUser, logout: logoutFromStore } = useAuthStore();
 
-  // Simpan timer refresh agar bisa dibatalkan
-  const refreshTimerRef = useRef(null);
+    // Gunakan state dari useAuthStore sebagai authUser
+    const [localAuthUser, setLocalAuthUser] = useState(authUser);
+    const [isLoading, setIsLoading] = useState(false);
 
-  // =====================
-  // 🟢 LOGIN FUNCTION
-  // =====================
-  const handleLogin = async (email, password) => {
-    setIsLoading(true);
-    try {
-      const res = await authService.login({ email, password });
-      const userData = res.user;
-      const tokenData = {
-        access_token: res.access_token,
-        refresh_token: res.refresh_token,
-        expired_at: res.expired_at,
-      };
+    const [employees, setEmployees] = useState(() => getInitialState('employees', INITIAL_EMPLOYEES));
+    const [managers, setManagers] = useState(() => getInitialState('managers', INITIAL_MANAGERS));
+    const [pendingLeave, setPendingLeave] = useState(() => getInitialState('pendingLeave', INITIAL_PENDING_LEAVE));
+    
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-      // Simpan ke localStorage
-      localStorage.setItem("authUser", JSON.stringify(userData));
-      localStorage.setItem("token", tokenData.access_token);
-      localStorage.setItem("refresh_token", tokenData.refresh_token);
-      localStorage.setItem("expired_at", tokenData.expired_at);
+    // Sinkronkan local state dengan store
+    useEffect(() => {
+        setLocalAuthUser(authUser);
+    }, [authUser]);
 
-      setAuthUser(userData);
-      showSwal("Login Berhasil!", `Selamat datang, ${userData.name}!`, "success", 2000);
+    // Sync state ke localStorage (hanya untuk data non-auth)
+    useEffect(() => {
+        // Jangan simpan authUser ke localStorage di sini karena sudah dihandle oleh zustand persist
+        localStorage.setItem('employees', JSON.stringify(employees));
+        localStorage.setItem('managers', JSON.stringify(managers));
+        localStorage.setItem('pendingLeave', JSON.stringify(pendingLeave));
+    }, [employees, managers, pendingLeave]);
 
-      // Jadwalkan refresh otomatis
-      scheduleTokenRefresh(tokenData.expired_at);
-    } catch (error) {
-      console.error("Login error:", error);
-      showSwal("Login gagal", "Email atau password salah", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    // --- Update handleLogin untuk menggunakan authService ---
+    const handleLogin = async (name, password) => { // Ganti parameter dari username/password ke name/password
+        setIsLoading(true);
 
-  // =====================
-  // 🟠 LOGOUT FUNCTION
-  // =====================
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch (e) {
-      console.warn("Logout error:", e);
-    }
-    clearRefreshTimer();
-    localStorage.clear();
-    setAuthUser(null);
-    setIsLogoutModalOpen(false);
-    showSwal("Logout Sukses", "Anda telah keluar.", "success", 1500);
-  };
-
-  const handleLogoutClick = () => {
-    setIsLogoutModalOpen(true);
-  };
-
-  // =====================
-  // 🔄 REFRESH TOKEN AUTO
-  // =====================
-  const scheduleTokenRefresh = (expiredAt) => {
-    clearRefreshTimer();
-    const expireTime = new Date(expiredAt).getTime();
-    const now = Date.now();
-    const refreshTime = expireTime - now - 60000; // refresh 1 menit sebelum expired
-
-    if (refreshTime > 0) {
-      refreshTimerRef.current = setTimeout(async () => {
         try {
-          const res = await authService.refreshToken();
-          const newToken = res.access_token;
-          const newExpiredAt = res.expired_at;
-
-          localStorage.setItem("token", newToken);
-          localStorage.setItem("expired_at", newExpiredAt);
-
-          showSwal("Token diperbarui", "Sesi login kamu tetap aktif.", "success", 1000);
-          scheduleTokenRefresh(newExpiredAt);
-        } catch (err) {
-          console.error("Gagal refresh token:", err);
-          showSwal("Sesi habis", "Silakan login ulang.", "warning");
-          handleLogout();
+            // Panggil fungsi login dari authService
+            // Fungsi login ini sekarang akan menyimpan data ke useAuthStore
+            // Kita tidak perlu menangani hasilnya secara manual di sini karena useAuthStore sudah otomatis sinkron
+            await import('../api/authService').then(module => module.login(name, password));
+            
+            // showSwal bisa dihapus atau diganti sesuai kebutuhan, karena login sekarang menggunakan authService
+            // showSwal('Login Berhasil!', `Selamat datang, ${foundUser.name} (${foundUser.role.toUpperCase()})!`, 'success', 2000);
+        } catch (error) {
+            // showSwal('Login Gagal', error.message || 'Username atau password salah.', 'error');
+            console.error("Login error:", error);
+            throw error; // Lempar error agar bisa ditangani di LoginPage
+        } finally {
+            setIsLoading(false);
         }
-      }, refreshTime);
-    }
-  };
+    };
 
-  const clearRefreshTimer = () => {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-  };
+    const handleLogout = () => {
+        // Panggil fungsi logout dari authService
+        logoutFromStore();
+        setIsLogoutModalOpen(false);
+        // showSwal('Logout Sukses', 'Anda telah berhasil keluar.', 'success', 1500);
+    };
 
-  // =====================
-  // 🔁 USE EFFECT
-  // =====================
-  useEffect(() => {
-    if (authUser) {
-      const expiredAt = localStorage.getItem("expired_at");
-      if (expiredAt) {
-        scheduleTokenRefresh(expiredAt);
-      }
-    }
-    return () => clearRefreshTimer();
-  }, [authUser]);
+    const handleLogoutClick = () => {
+        setIsLogoutModalOpen(true);
+    };
 
-  return {
-    authUser,
-    setAuthUser,
-    isLoading,
-    isLogoutModalOpen,
-    setIsLogoutModalOpen,
-    handleLogin,
-    handleLogout,
-    handleLogoutClick,
-  };
+    // Fungsi untuk memperbarui user jika diperlukan (misalnya dari API)
+    const setAuthUser = (updatedUser) => {
+        // Kita bisa mengupdate user di store jika diperlukan
+        const currentStoreState = useAuthStore.getState();
+        currentStoreState.setAuth({
+            user: updatedUser,
+            access_token: currentStoreState.access_token,
+            refresh_token: currentStoreState.refresh_token,
+        });
+    };
+
+    return {
+        authUser: localAuthUser, // Kembalikan authUser dari store
+        setAuthUser, // Fungsi untuk memperbarui user
+        isLoading,
+        employees,
+        setEmployees,
+        managers,
+        setManagers,
+        pendingLeave,
+        setPendingLeave,
+        isLogoutModalOpen,
+        setIsLogoutModalOpen,
+        handleLogin, // Gunakan handleLogin yang baru
+        handleLogout,
+        handleLogoutClick,
+    };
 };

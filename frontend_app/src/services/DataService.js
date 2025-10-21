@@ -1,4 +1,4 @@
-import { showSwal } from '../utils/constants'; 
+import { showSwal } from '../utils/swal'; 
 import axios from 'axios'; // Tambahkan import axios jika lo menggunakannya di tempat lain
 
 // Fungsi untuk mendapatkan lokasi (getCurrentLocation)

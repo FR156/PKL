@@ -1,172 +1,228 @@
-// src/pages/LoginPage.jsx
+// src/pages/LoginPage.js
 import React, { useState } from "react";
-import { PrimaryButton, GlassCard } from "../components/componentsUtilityUI";
-import { COLORS } from "../utils/constants";
-import { login } from "../api/authService";
+import { PrimaryButton2 } from "../components/UI/Buttons";
+import { login } from "../api/authService"; // ✅ gunakan langsung login dari authService.js
+import useAuthStore from "../store/authStore";
+import { useNavigate } from "react-router-dom";
+
+const COLORS = {
+  Primary: "#000000ff",
+};
+
+const PrimaryButton = ({ children, className = "", disabled, ...props }) => {
+  return (
+    <button
+      className={`
+        px-6 py-3 font-semibold text-white rounded-2xl 
+        bg-[${COLORS.Primary}] hover:bg-blue-600 
+        shadow-lg shadow-blue-500/50 
+        transition-all duration-300 ease-in-out 
+        transform hover:scale-[1.02] active:scale-[0.98] 
+        ${disabled ? "opacity-50 cursor-not-allowed" : ""} 
+        ${className}
+      `}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+const GlassCard = ({ children, className = "" }) => (
+  <div
+    className={`
+      p-8 rounded-[30px] border border-white/50 
+      bg-white/20 backdrop-blur-md shadow-xl 
+      ${className}
+    `}
+  >
+    {children}
+  </div>
+);
 
 const LoginPage = () => {
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
-  // ✅ Handle login ke Laravel
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const isPasswordValid = password.length >= 8;
+  const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
 
-    try {
-      const response = await login(name, password);
-      console.log("Login berhasil:", response);
-      alert("Login berhasil!");
+  // ✅ Perbaikan handleSubmit (tidak nested lagi)
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-      // Simpan token atau data user jika perlu
-      // localStorage.setItem("token", response.token);
-      // localStorage.setItem("role", response.user.role);
+  if (!isPasswordValid) {
+    alert("Password minimal 8 karakter");
+    return;
+  }
 
-      // Contoh redirect sederhana:
-      // window.location.href = "/dashboard";
-    } catch (error) {
-      console.error("Login gagal:", error);
-      alert("Nama atau password salah!");
-    } finally {
-      setIsLoading(false);
+  setIsLoading(true);
+  try {
+    const userData = await login(username, password);
+
+    if (!userData || !userData.id) {
+      throw new Error("Login gagal, user tidak ditemukan");
     }
-  };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+    setAuth({
+      user: {
+        id: userData.id,
+        username: userData.name,
+        device: userData.device || null,
+        permissions: userData.permissions || [],
+      },
+      access_token: userData.token.access_token,
+      refresh_token: userData.token.refresh_token,
+    });
 
-  const getPasswordBorderColor = () => {
-    if (!isPasswordFocused || password.length === 0)
-      return "border-white/50";
-    return password.length >= 8 ? "border-green-500" : "border-red-500";
-  };
+    console.log("✅ Login berhasil:", userData);
+    // 🔧 Redirect ke employee dashboard setelah login berhasil
+    navigate("/employee-dashboard");
+  } catch (err) {
+    console.error("❌ Login gagal:", err.response?.data || err.message);
+    alert(err.response?.data?.message || err.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-  const getPasswordRingColor = () => {
-    if (!isPasswordFocused || password.length === 0)
-      return "focus:ring-red-500";
-    return password.length >= 8 ? "focus:ring-green-500" : "focus:ring-red-500";
-  };
+
+
+  const togglePasswordVisibility = () => setShowPassword(!showPassword); 
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 relative overflow-hidden">
-      {/* Background dekorasi */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-      <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
-
-      <GlassCard className="w-full max-w-md p-8 md:p-10 text-center relative z-10 bg-white/30 backdrop-blur-xl border border-white/30 shadow-2xl rounded-3xl">
-        <div className="flex justify-center mb-6">
-          <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-            <i className="fas fa-fingerprint text-3xl text-white"></i>
-          </div>
+    <div className="flex items-center justify-center min-h-screen bg-[#D3DFFE] p-4">
+      <GlassCard className="w-full max-w-sm text-center transform transition-all duration-500 ">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#708993"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-user mb-4"
+          >
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <h1 className="text-2xl font-bold text-gray-800">HRMS</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Human Resource Management System
+          </p>
         </div>
 
-        <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-          HRIS & Payroll System
-        </h2>
-        <p className="text-gray-600 mb-8">Masuk untuk melanjutkan</p>
-
-        {/* ✅ Form Login */}
-        <form onSubmit={handleLogin} className="space-y-6">
+        {/* FORM LOGIN */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Username */}
           <div>
-            <input  
-              id="name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              required
-              className="appearance-none relative block w-full px-4 py-3 bg-white/60 backdrop-blur-sm border border-white/50 placeholder-gray-500 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm md:text-base transition-all duration-200"
-              placeholder="Nama"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <i className="fas fa-user absolute left-3 top-1/2 transform -translate-y-1/2 text-black"></i>
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onFocus={() => setIsUsernameFocused(true)}
+                onBlur={() => setIsUsernameFocused(false)}
+                required
+                className={`
+                  w-full pl-10 pr-4 py-3 border rounded-2xl 
+                  bg-white/50 backdrop-blur-sm shadow-sm 
+                  placeholder-gray-600 text-gray-800 focus:outline-none 
+                  ${!isUsernameFocused ? "border-white/50" : ""} 
+                  ${isUsernameFocused ? "border-green-500" : ""}
+                `}
+              />
+            </div>
           </div>
 
-          <div className="relative">
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              required
-              className={`appearance-none relative block w-full px-4 py-3 pr-12 bg-white/60 backdrop-blur-sm border ${getPasswordBorderColor()} placeholder-gray-500 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 ${getPasswordRingColor()} focus:border-transparent text-sm md:text-base transition-all duration-200`}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onFocus={() => setIsPasswordFocused(true)}
-              onBlur={() => setIsPasswordFocused(false)}
-              disabled={isLoading}
-            />
+          {/* Password */}
+          <div>
+            <div className="relative">
+              <i className="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-black"></i>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
+                required
+                className={`
+                  w-full pl-10 pr-12 py-3 border rounded-2xl 
+                  bg-white/50 backdrop-blur-sm shadow-sm 
+                  placeholder-gray-600 text-gray-800 focus:outline-none 
+                  ${!isPasswordFocused ? "border-white/50" : ""}
+                  ${
+                    isPasswordFocused && !isPasswordValid
+                      ? "border-red-500 "
+                      : ""
+                  }
+                  ${
+                    isPasswordFocused && isPasswordValid
+                      ? "border-green-500"
+                      : ""
+                  }
+                `}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors duration-200 bg-transparent focus:outline-none border-none"
+                onClick={togglePasswordVisibility}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                <i
+                  className={`fas ${
+                    showPassword ? "fa-eye-slash" : "fa-eye"
+                  }`}
+                ></i>
+              </button>
+            </div>
 
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onClick={togglePasswordVisibility}
-            >
-              {showPassword ? (
-                <i className="fas fa-eye-slash text-gray-500 hover:text-gray-700"></i>
-              ) : (
-                <i className="fas fa-eye text-gray-500 hover:text-gray-700"></i>
-              )}
-            </button>
-
-            {isPasswordFocused && password.length > 0 && password.length < 8 && (
-              <p className="mt-2 text-xs text-red-500 text-left">
-                Password harus minimal 8 karakter
+            {isPasswordFocused && password.length > 0 && (
+              <p
+                className={`mt-1 text-xs text-left ${
+                  isPasswordValid ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {isPasswordValid
+                  ? ""
+                  : `Minimal 8 karakter. Kurang ${8 - password.length} karakter.`}
               </p>
             )}
           </div>
 
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded bg-white/60 backdrop-blur-sm"
-                disabled={isLoading}
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-gray-700">
-                Ingat saya
-              </label>
-            </div>
-            <div className="text-xs sm:text-sm">
-              <a
-                href="#"
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
-              >
-                Lupa Password?
-              </a>
-            </div>
-          </div>
-
-          <PrimaryButton
-            type="submit"
-            className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg transform transition-all duration-200 hover:scale-[1.02]"
-            disabled={isLoading}
-          >
+          {/* Tombol Login */}
+          <PrimaryButton2 type="submit" className="w-full mt-6" disabled={isLoading}>
             {isLoading ? (
               <>
-                <i className="fas fa-spinner fa-spin mr-2"></i> Loading...
+                <i className="fas fa-spinner fa-spin mr-2"></i> Memproses...
               </>
             ) : (
               <>
                 <i className="fas fa-sign-in-alt mr-2"></i> Masuk
               </>
             )}
-          </PrimaryButton>
+          </PrimaryButton2>
         </form>
 
+        {/* Saran login */}
         <div className="mt-8 p-4 bg-white/30 backdrop-blur-sm rounded-2xl border border-white/30">
           <p className="text-xs text-gray-600 font-medium mb-2">
             Coba login sebagai:
           </p>
-          <div className="space-y-1 text-xs">
+          <div className="space-y-1 text-xs text-left">
             <p className="text-gray-700">
               <span className="font-medium">Karyawan:</span>{" "}
               <code className="bg-white/50 px-2 py-1 rounded">
@@ -187,7 +243,9 @@ const LoginPage = () => {
             </p>
             <p className="text-gray-700">
               <span className="font-medium">Owner:</span>{" "}
-              <code className="bg-white/50 px-2 py-1 rounded">owner/password</code>
+              <code className="bg-white/50 px-2 py-1 rounded">
+                owner/password
+              </code>
             </p>
           </div>
         </div>
