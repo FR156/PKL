@@ -475,7 +475,7 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                         <button
                             onClick={() => handleClock('In')}
                             disabled={isClockedIn || isClocking || isClockDisabled}
-                            className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-white transition-all duration-300 flex items-center justify-center ${
+                            className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-white transition-all duration-300 flex items-center justify-center border-none focus:outline-none ${
                                 isClockedIn || isClockDisabled
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-[#708993] hover:bg-[#5a6f7a] shadow-lg hover:shadow-xl'
@@ -492,7 +492,7 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                         <button
                             onClick={() => handleClock('Out')}
                             disabled={!isClockedIn || isClocking || isClockDisabled}
-                            className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-white transition-all duration-300 flex items-center justify-center ${
+                            className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-white transition-all duration-300 flex items-center justify-center border-none focus:outline-none ${
                                 !isClockedIn || isClockDisabled
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-red-500 hover:bg-red-600 shadow-lg hover:shadow-xl'

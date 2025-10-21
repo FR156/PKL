@@ -107,7 +107,7 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, user, permissionData, work
               <div className="mt-auto">
                 <button
                   onClick={onClose}
-                  className="w-full py-3 px-4 bg-white/10 text-white rounded-2xl font-medium hover:bg-white/20 transition-all"
+                  className="w-full py-3 px-4 bg-white/10 text-white rounded-2xl font-medium hover:bg-white/20 border-none focus:outline-none"
                   disabled={isSubmitting}
                 >
                   <i className="fas fa-times mr-2"></i>
@@ -190,7 +190,7 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, user, permissionData, work
                 <button
                   type="submit"
                   disabled={!isFormValid || isSubmitting}
-                  className={`w-full py-3 px-4 rounded-2xl font-medium transition-all flex items-center justify-center ${
+                  className={`w-full py-3 px-4 rounded-2xl font-medium transition-all flex items-center justify-center border-none focus:outline-none ${
                     isFormValid && !isSubmitting
                       ? 'bg-[#708993] text-white hover:bg-[#5a6f7a] shadow-md'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'

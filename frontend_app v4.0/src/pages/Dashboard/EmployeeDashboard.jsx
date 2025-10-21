@@ -145,7 +145,7 @@ const EmployeeDashboard = (props) => {
         setActiveTab(tab.id);
         setSidebarOpen(false);
       }}
-      className={`w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 focus:outline-none ${
+      className={`w-full flex items-center px-4 py-3 rounded-xl focus:outline-none ${
         activeTab === tab.id
           ? // ACTIVE STATE: Background biru terang, Teks & Ikon Hitam, Shadow tipis
             'bg-[#708993] text-white shadow-md'
