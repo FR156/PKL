@@ -31,7 +31,7 @@ body {
   min-height: 100vh;
   /* PERBAIKAN UTAMA: Set background body ke warna yang lo mau */
   background-color: #D3DFFE; 
-  padding-top:8px;
+  padding-top:0;
 }
 
 h1 {

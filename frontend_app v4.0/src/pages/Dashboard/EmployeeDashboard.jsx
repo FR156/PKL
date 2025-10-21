@@ -94,6 +94,8 @@ const EmployeeDashboard = (props) => {
 
       <div className="container mx-auto px-3 sm:px-4 py-4">
         <div className="flex flex-col lg:flex-row gap-4">
+
+
           {/* Sidebar */}
           <div className={`
             lg:w-64 transform transition-all duration-300 ease-in-out
@@ -115,15 +117,14 @@ const EmployeeDashboard = (props) => {
                 </button>
               </div>
 
-              {/* User Info */}
+              {/* User Info bla bla */}
               <div className="flex items-center mb-6 p-3 bg-white/20 backdrop-blur-xl backdrop-blur-xl rounded-2xl border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)] text-left ">
                 <div className="relative">
                   <img
                     src={user?.profileImage || 'https://picsum.photos/seed/employee/48/48.jpg'}
                     alt="Profile"
                     className="w-12 h-12 rounded-full object-cover border-2 border-white/50 shadow-[0_4px_16px_0_rgba(31,38,135,0.2)]"
-                  />
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white/80"></div>
+                  />                
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-semibold text-gray-600/80 truncate max-w-[120px]">{user?.name || 'Guest'}</p>
@@ -144,7 +145,7 @@ const EmployeeDashboard = (props) => {
         setActiveTab(tab.id);
         setSidebarOpen(false);
       }}
-      className={`w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 focus:outline-none ${
+      className={`w-full flex items-center px-4 py-3 rounded-xl focus:outline-none ${
         activeTab === tab.id
           ? // ACTIVE STATE: Background biru terang, Teks & Ikon Hitam, Shadow tipis
             'bg-[#708993] text-white shadow-md'
