@@ -7,8 +7,17 @@ const COMPANY_LOCATION = {
   name: 'PT Wilmar Bisnis Medan'
 };
 
+// Fungsi untuk menghitung selisih waktu dalam menit
+const calculateTimeDifference = (time1, time2) => {
+  const [hour1, minute1] = time1.split(':').map(Number);
+  const [hour2, minute2] = time2.split(':').map(Number);
+  const totalMinutes1 = hour1 * 60 + minute1;
+  const totalMinutes2 = hour2 * 60 + minute2;
+  return Math.abs(totalMinutes1 - totalMinutes2);
+};
+
 // Fungsi utama handle absensi karyawan
-export const handleAttendanceClock = async (user, type, photoData, workSettings) => {
+export const handleAttendanceClock = async (user, type, photoData, workSettings, permissionData = null) => {
   try {
     // Ambil waktu & tanggal sekarang
     const now = new Date();
@@ -18,27 +27,34 @@ export const handleAttendanceClock = async (user, type, photoData, workSettings)
     // Deteksi terlambat / pulang cepat
     const startTime = workSettings?.startTime || '08:00';
     const endTime = workSettings?.endTime || '17:00';
-    const [hour, minute] = time.split(':').map(Number);
-    const currentMinutes = hour * 60 + minute;
-
-    const [startHour, startMinute] = startTime.split(':').map(Number);
-    const startMinutes = startHour * 60 + startMinute;
-
-    const [endHour, endMinute] = endTime.split(':').map(Number);
-    const endMinutes = endHour * 60 + endMinute;
-
+    
     let isLate = false;
     let isEarlyLeave = false;
     let reason = '';
+    let permissionNote = '';
+    let permissionFile = '';
+    let lateDuration = 0;
 
-    // Deteksi terlambat untuk Clock In
-    if (type === 'In' && currentMinutes > startMinutes) {
-      isLate = true;
+    // Deteksi terlambat untuk Clock In (lebih dari jam 08:00)
+    if (type === 'In') {
+      if (time > startTime) {
+        isLate = true;
+        lateDuration = calculateTimeDifference(time, startTime);
+      }
     }
 
-    // Deteksi pulang cepat untuk Clock Out
-    if (type === 'Out' && currentMinutes < endMinutes) {
-      isEarlyLeave = true;
+    // Deteksi pulang cepat untuk Clock Out (kurang dari jam 17:00)
+    if (type === 'Out') {
+      if (time < endTime) {
+        isEarlyLeave = true;
+      }
+    }
+
+    // Jika ada data izin, gunakan data tersebut
+    if (permissionData) {
+      permissionNote = permissionData.note || '';
+      permissionFile = permissionData.file || '';
+      reason = permissionData.note || ''; // Gunakan catatan izin sebagai alasan
     }
 
     // Buat record absensi
@@ -51,10 +67,14 @@ export const handleAttendanceClock = async (user, type, photoData, workSettings)
       type: type === 'In' ? 'Clock In' : 'Clock Out',
       isLate,
       isEarlyLeave,
+      lateDuration,
       reason,
+      permissionNote,
+      permissionFile,
       location: 'PT Wilmar Bisnis Medan',
       coordinates: `${COMPANY_LOCATION.latitude}, ${COMPANY_LOCATION.longitude}`,
-      division: user.division
+      division: user.division,
+      hasPermission: !!permissionData
     };
 
     // Simpan foto absen
@@ -68,23 +88,85 @@ export const handleAttendanceClock = async (user, type, photoData, workSettings)
     };
 
     // Notifikasi sukses
-    showSwal(
-      'Berhasil', 
-      `Berhasil melakukan ${type === 'In' ? 'Clock In' : 'Clock Out'}!${isLate ? ' (Terlambat)' : ''}${isEarlyLeave ? ' (Pulang Cepat)' : ''}`, 
-      'success'
-    );
+    let successMessage = `Berhasil melakukan ${type === 'In' ? 'Clock In' : 'Clock Out'}!`;
+    
+    if (isLate) {
+      successMessage += ` (Terlambat ${lateDuration} menit)`;
+    }
+    if (isEarlyLeave) {
+      successMessage += ' (Pulang Cepat)';
+    }
+    if (permissionData) {
+      successMessage += ' - Dengan Izin';
+    }
+
+    showSwal('Berhasil', successMessage, 'success');
 
     return { 
       success: true, 
       newRecord, 
       newPhotoRecord,
       isLate,
-      isEarlyLeave
+      isEarlyLeave,
+      lateDuration
     };
 
   } catch (error) {
     console.error('Error handleAttendanceClock:', error);
     showSwal('Error', 'Gagal melakukan absensi: ' + error.message, 'error');
+    return { success: false, error: error.message };
+  }
+};
+
+// Fungsi untuk mengajukan permohonan izin
+export const submitPermissionRequest = async (user, type, permissionData, workSettings) => {
+  try {
+    const now = new Date();
+    const date = now.toLocaleDateString('id-ID');
+    const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+    // Buat record permohonan izin
+    const permissionRecord = {
+      id: Date.now(),
+      userId: user.id,
+      name: user.name,
+      date,
+      time,
+      type: type === 'In' ? 'Izin Terlambat' : 'Izin Pulang Cepat',
+      permissionType: type === 'In' ? 'late' : 'early_out',
+      note: permissionData.note,
+      file: permissionData.file,
+      status: 'approved', // Untuk dummy data langsung approved
+      approvedBy: 'System Auto',
+      approvedAt: now.toISOString(),
+      division: user.division
+    };
+
+    // Simpan ke history permohonan izin
+    const userPermissionHistory = user.permissionHistory || [];
+    userPermissionHistory.push(permissionRecord);
+
+    // Hitung durasi keterlambatan jika izin terlambat
+    let additionalInfo = '';
+    if (type === 'In' && permissionData.lateDuration) {
+      additionalInfo = ` (${permissionData.lateDuration} menit)`;
+    }
+
+    showSwal(
+      'Izin Disetujui', 
+      `Permohonan izin ${type === 'In' ? 'terlambat' : 'pulang cepat'} Anda telah disetujui${additionalInfo}. ${type === 'Out' ? 'Clock out otomatis telah dicatat.' : 'Silahkan lanjutkan absensi.'}`, 
+      'success'
+    );
+
+    return {
+      success: true,
+      permissionRecord,
+      message: 'Izin berhasil diajukan dan disetujui'
+    };
+
+  } catch (error) {
+    console.error('Error submitPermissionRequest:', error);
+    showSwal('Error', 'Gagal mengajukan permohonan izin: ' + error.message, 'error');
     return { success: false, error: error.message };
   }
 };

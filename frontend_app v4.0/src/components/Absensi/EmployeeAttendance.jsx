@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard, StatCard } from '../UI/Cards';
 import { PrimaryButton } from '../UI/Buttons';
-import { handleAttendanceClock } from '../../api/dataApi';
+import { handleAttendanceClock, submitPermissionRequest } from '../../api/dataApi';
 import { showSwal } from '../../utils/swal';
 import CameraModal from '../Shared/Modals/CameraModal';
+import PermissionModal from '../Shared/Modals/PermissionModal';
 
 const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => {
     const [lastAttendance, setLastAttendance] = useState(null);
@@ -11,10 +12,12 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
     const [groupedAttendance, setGroupedAttendance] = useState([]);
     const [isClocking, setIsClocking] = useState(false);
     const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+    const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
     const [attendanceType, setAttendanceType] = useState('');
     const [isSuccessEffect, setIsSuccessEffect] = useState(false);
     const [isClockDisabled, setIsClockDisabled] = useState(false);
     const [locationStatus, setLocationStatus] = useState('');
+    const [pendingPermission, setPendingPermission] = useState(null);
 
     const WORK_START = workSettings?.startTime || "08:00";
     const WORK_END = workSettings?.endTime || "17:00";
@@ -47,27 +50,59 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                     late: false, 
                     earlyOut: false, 
                     reason: '',
-                    status: 'Tepat Waktu'
+                    status: 'Tepat Waktu',
+                    permissionNote: '',
+                    permissionFile: '',
+                    hasPermission: false,
+                    permissionType: '',
+                    lateDuration: 0
                 };
             }
             if (record.type === 'Clock In') {
                 acc[date].clockIn = record.time;
-                acc[date].late = record.late;
-                if (record.late) {
+                acc[date].late = record.isLate;
+                acc[date].lateDuration = record.lateDuration || 0;
+                if (record.isLate) {
                     acc[date].status = 'Terlambat';
                 }
                 if (record.reason) {
                     acc[date].reason = record.reason;
                 }
+                if (record.permissionNote) {
+                    acc[date].permissionNote = record.permissionNote;
+                    acc[date].hasPermission = true;
+                    acc[date].permissionType = 'late';
+                }
+                if (record.permissionFile) {
+                    acc[date].permissionFile = record.permissionFile;
+                }
             } else if (record.type === 'Clock Out') {
                 acc[date].clockOut = record.time;
-                acc[date].earlyOut = record.earlyOut;
-                if (record.earlyOut) {
+                acc[date].earlyOut = record.isEarlyLeave;
+                if (record.isEarlyLeave) {
                     acc[date].status = 'Pulang Cepat';
                 }
                 if (record.reason) {
                     acc[date].reason = record.reason;
                 }
+                if (record.permissionNote) {
+                    acc[date].permissionNote = record.permissionNote;
+                    acc[date].hasPermission = true;
+                    acc[date].permissionType = 'early_out';
+                }
+                if (record.permissionFile) {
+                    acc[date].permissionFile = record.permissionFile;
+                }
+            } else if (record.type === 'Clock Out (Izin Cepat Pulang)') {
+                // Special case for automatic clock out with early permission
+                acc[date].clockOut = record.time;
+                acc[date].earlyOut = true;
+                acc[date].status = 'Pulang Cepat';
+                acc[date].reason = record.reason;
+                acc[date].permissionNote = record.permissionNote;
+                acc[date].hasPermission = true;
+                acc[date].permissionType = 'early_out';
+                acc[date].permissionFile = record.permissionFile;
             }
             return acc;
         }, {});
@@ -131,6 +166,15 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
         }
     }, []);
 
+    // Function to calculate time difference in minutes
+    const calculateTimeDifference = (time1, time2) => {
+        const [hour1, minute1] = time1.split(':').map(Number);
+        const [hour2, minute2] = time2.split(':').map(Number);
+        const totalMinutes1 = hour1 * 60 + minute1;
+        const totalMinutes2 = hour2 * 60 + minute2;
+        return Math.abs(totalMinutes1 - totalMinutes2);
+    };
+
     const handleClock = async (type) => {
         if (isClocking) return;
         setIsClocking(true);
@@ -154,10 +198,10 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                     const officeLon = 98.7294571;
                     const distance = calculateDistance(latitude, longitude, officeLat, officeLon);
                     
-                    if (distance > 200) { // 200 meter radius
+                    if (distance > 1000) { // 200 meter radius
                         showSwal(
                             'Lokasi Diluar Radius', 
-                            `Anda berada ${distance.toFixed(0)} meter dari kantor. Maksimal radius 200 meter.`, 
+                            `Anda berada ${distance.toFixed(0)} meter dari kantor. Maksimal radius 1000 meter.`, 
                             'error'
                         );
                         setIsClocking(false);
@@ -165,7 +209,35 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                     }
                     
                     setLocationStatus(`Dalam radius (${distance.toFixed(0)}m)`);
-                    setIsCameraModalOpen(true);
+                    
+                    // Check if need permission (late clock in or early clock out)
+                    const now = new Date();
+                    const currentTime = now.toTimeString().slice(0, 5);
+                    const isLate = type === 'In' && currentTime > WORK_START;
+                    const isEarlyOut = type === 'Out' && currentTime < WORK_END;
+                    
+                    if (isLate || isEarlyOut) {
+                        // Calculate late duration
+                        let lateDuration = 0;
+                        if (isLate) {
+                            lateDuration = calculateTimeDifference(currentTime, WORK_START);
+                        }
+                        
+                        // Show permission modal instead of camera
+                        setPendingPermission({
+                            type,
+                            isLate,
+                            isEarlyOut,
+                            currentTime,
+                            lateDuration
+                        });
+                        setIsPermissionModalOpen(true);
+                        setIsClocking(false);
+                    } else {
+                        // Proceed directly to camera
+                        setIsCameraModalOpen(true);
+                        setIsClocking(false);
+                    }
                 },
                 (error) => {
                     console.error('Error getting location:', error);
@@ -204,6 +276,65 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
         return R * c; // Distance in meters
     };
 
+    const onPermissionSubmit = async (permissionData) => {
+        setIsPermissionModalOpen(false);
+        
+        try {
+            // Submit permission request
+            const permissionResult = await submitPermissionRequest(
+                user,
+                pendingPermission.type,
+                permissionData,
+                workSettings
+            );
+
+            if (permissionResult.success) {
+                // If this is an early out permission, create automatic clock out record
+                if (pendingPermission.type === 'Out') {
+                    const now = new Date();
+                    const currentTime = now.toTimeString().slice(0, 5);
+                    const date = now.toLocaleDateString('id-ID');
+                    
+                    const autoClockOutRecord = {
+                        id: Date.now(),
+                        userId: user.id,
+                        name: user.name,
+                        date,
+                        time: currentTime,
+                        type: 'Clock Out (Izin Cepat Pulang)',
+                        reason: permissionData.note,
+                        isAuto: true,
+                        isEarlyLeave: true,
+                        permissionNote: permissionData.note,
+                        permissionFile: permissionData.file,
+                        hasPermission: true,
+                        permissionType: 'early_out'
+                    };
+                    
+                    setLastAttendance(autoClockOutRecord);
+                    setAttendanceHistory(prev => [autoClockOutRecord, ...prev]);
+                    
+                    showSwal(
+                        'Berhasil', 
+                        'Izin cepat pulang telah disetujui. Clock out otomatis telah dicatat.', 
+                        'success'
+                    );
+                    
+                    // Reset pending permission
+                    setPendingPermission(null);
+                    setIsClocking(false);
+                } else {
+                    // For late permission, proceed with normal clock in
+                    setIsCameraModalOpen(true);
+                }
+            }
+        } catch (err) {
+            console.error('Gagal mengajukan izin:', err);
+            showSwal('Error', 'Gagal mengajukan permohonan izin', 'error');
+            setIsClocking(false);
+        }
+    };
+
     const onCaptureConfirm = async (photoData) => {
         setIsCameraModalOpen(false);
         setIsClocking(true);
@@ -213,25 +344,12 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                 user,
                 attendanceType,
                 photoData,
-                workSettings
+                workSettings,
+                pendingPermission // Kirim data izin jika ada
             );
 
             if (result.success) {
                 const { newRecord, newPhotoRecord } = result;
-                let reason = '';
-
-                // Minta alasan jika terlambat atau pulang cepat
-                if (newRecord.isLate || newRecord.isEarlyLeave) {
-                    const { value: inputReason } = await showSwal(
-                        'Isi Alasan',
-                        newRecord.isLate
-                            ? 'Anda tercatat terlambat, jelaskan alasannya:'
-                            : 'Anda tercatat pulang lebih cepat, jelaskan alasannya:',
-                        'input'
-                    );
-                    reason = inputReason || 'Tidak ada alasan';
-                    newRecord.reason = reason;
-                }
 
                 setLastAttendance(newRecord);
                 setAttendanceHistory(prev => [newRecord, ...prev]);
@@ -254,6 +372,9 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                 );
                 setIsSuccessEffect(true);
                 setTimeout(() => setIsSuccessEffect(false), 2000);
+                
+                // Reset pending permission
+                setPendingPermission(null);
             }
         } catch (err) {
             console.error('Proses absensi gagal:', err);
@@ -330,9 +451,19 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                         {lastAttendance && (
                             <p className="text-sm text-gray-500">
                                 Terakhir: {lastAttendance.type} • {lastAttendance.date} • {lastAttendance.time}
+                                {lastAttendance.lateDuration > 0 && (
+                                    <span className="block text-xs text-yellow-600 mt-1">
+                                        Terlambat {lastAttendance.lateDuration} menit
+                                    </span>
+                                )}
                                 {lastAttendance.reason && (
                                     <span className="block text-xs text-gray-400 mt-1">
                                         Alasan: {lastAttendance.reason}
+                                    </span>
+                                )}
+                                {lastAttendance.permissionNote && (
+                                    <span className="block text-xs text-blue-400 mt-1">
+                                        Izin: {lastAttendance.permissionNote}
                                     </span>
                                 )}
                             </p>
@@ -444,6 +575,10 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                                 <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
                                 <span>Pulang Cepat</span>
                             </div>
+                            <div className="flex items-center text-sm text-gray-600">
+                                <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                                <span>Dengan Izin</span>
+                            </div>
                         </div>
                     </div>
 
@@ -456,7 +591,8 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                                     <th className="px-6 py-4 text-left font-semibold">Clock In</th>
                                     <th className="px-6 py-4 text-left font-semibold">Clock Out</th>
                                     <th className="px-6 py-4 text-left font-semibold">Status</th>
-                                    <th className="px-6 py-4 text-left font-semibold rounded-r-2xl">Keterangan</th>
+                                    <th className="px-6 py-4 text-left font-semibold">Keterangan</th>
+                                    <th className="px-6 py-4 text-left font-semibold rounded-r-2xl">Izin</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -469,13 +605,26 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                                             <div className="font-medium text-gray-900">{record.date}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center">
-                                                <span className="font-medium text-gray-900">
-                                                    {record.clockIn || '-'}
-                                                </span>
-                                                {record.late && (
-                                                    <span className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full font-medium">
-                                                        Terlambat
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center">
+                                                    <span className="font-medium text-gray-900">
+                                                        {record.clockIn || '-'}
+                                                    </span>
+                                                    {record.late && (
+                                                        <span className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full font-medium">
+                                                            Terlambat
+                                                        </span>
+                                                    )}
+                                                    {record.hasPermission && record.permissionType === 'late' && (
+                                                        <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full font-medium">
+                                                            <i className="fas fa-file-alt mr-1"></i>
+                                                            Izin
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {record.lateDuration > 0 && (
+                                                    <span className="text-xs text-yellow-600 mt-1">
+                                                        {record.lateDuration} menit
                                                     </span>
                                                 )}
                                             </div>
@@ -488,6 +637,12 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                                                 {record.earlyOut && (
                                                     <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full font-medium">
                                                         Pulang Cepat
+                                                    </span>
+                                                )}
+                                                {record.hasPermission && record.permissionType === 'early_out' && (
+                                                    <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full font-medium">
+                                                        <i className="fas fa-file-alt mr-1"></i>
+                                                        Izin
                                                     </span>
                                                 )}
                                             </div>
@@ -517,6 +672,18 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                                                 {record.reason || 'Tidak ada keterangan'}
                                             </p>
                                         </td>
+                                        <td className="px-6 py-4">
+                                            {record.permissionNote ? (
+                                                <div className="flex items-center">
+                                                    <i className="fas fa-file-text text-blue-500 mr-2"></i>
+                                                    <span className="text-blue-600 text-sm">
+                                                        {record.permissionNote}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 text-sm">-</span>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -540,6 +707,12 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                                             }`}>
                                                 {record.status}
                                             </span>
+                                            {record.hasPermission && (
+                                                <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full font-medium">
+                                                    <i className="fas fa-file-alt mr-1"></i>
+                                                    Izin
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -553,6 +726,11 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                                                 <span className="ml-1 text-yellow-600 text-xs">(Terlambat)</span>
                                             )}
                                         </p>
+                                        {record.lateDuration > 0 && (
+                                            <p className="text-xs text-yellow-600 mt-1">
+                                                {record.lateDuration} menit
+                                            </p>
+                                        )}
                                     </div>
                                     <div>
                                         <p className="text-gray-600 mb-1">Clock Out</p>
@@ -564,6 +742,20 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                                         </p>
                                     </div>
                                 </div>
+
+                                {record.permissionNote && (
+                                    <div className="mt-3 pt-3 border-t border-gray-200">
+                                        <p className="text-gray-600 text-sm mb-1">Izin:</p>
+                                        <p className="text-blue-600 text-sm">{record.permissionNote}</p>
+                                        {record.permissionFile && (
+                                            <div className="mt-1">
+                                                <a href={record.permissionFile} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 underline">
+                                                    Lihat Bukti Izin
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 
                                 {record.reason && (
                                     <div className="mt-3 pt-3 border-t border-gray-200">
@@ -597,6 +789,19 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                 onCapture={onCaptureConfirm}
                 user={user}
                 title={`Clock ${attendanceType === 'In' ? 'IN' : 'OUT'} - Absensi Selfie`}
+            />
+
+            <PermissionModal
+                isOpen={isPermissionModalOpen}
+                onClose={() => {
+                    setIsPermissionModalOpen(false);
+                    setIsClocking(false);
+                    setPendingPermission(null);
+                }}
+                onSubmit={onPermissionSubmit}
+                user={user}
+                permissionData={pendingPermission}
+                workSettings={workSettings}
             />
         </>
     );
