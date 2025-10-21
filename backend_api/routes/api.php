@@ -47,7 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/attendances/{id}', [AttendanceController::class, 'destroy'])->middleware('permission:delete attendances');
     // Attendance reasons management (CRUD + review)
     Route::post('/attendance-reasons', [AttendanceReasonController::class, 'store'])->middleware('permission:create attendance reasons');
-    Route::get('/attendance-reasons/pending', [AttendanceReasonController::class, 'store'])->middleware('permission:view attendance reasons');
-    Route::put('/attendance-reasons/{id}/review', [AttendanceReasonController::class, 'review'])->middleware('permission:review attendance reasons');
+    Route::get('/attendance-reasons/review', [AttendanceReasonController::class, 'pending'])->middleware('permission:view attendance reasons');
+    Route::put('/attendance-reasons/review/{id}', [AttendanceReasonController::class, 'review'])->middleware('permission:review attendance reasons');
     Route::delete('/attendance-reasons/{id}', [AttendanceReasonController::class, 'destroy'])->middleware('permission:delete attendance reasons');
 });
