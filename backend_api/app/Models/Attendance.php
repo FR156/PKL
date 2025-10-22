@@ -29,6 +29,11 @@ class Attendance extends Model
     {
         return $this->hasOne(AttendanceReason::class);
     }
+
+    public function account()
+    {
+        return $this->belongsTo(Account::class);
+    }
 }
 
 ?>

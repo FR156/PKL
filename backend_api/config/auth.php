@@ -123,7 +123,7 @@ return [
     */
 
     'token_expiry' => [
-        'access'  => env('ACCESS_TOKEN_LIFETIME', 1800), // 30 minutes
+        'access'  => env('ACCESS_TOKEN_LIFETIME', 3600), // 30 minutes
         'refresh' => env('REFRESH_TOKEN_LIFETIME', 86400), // 24 hours
     ],
 

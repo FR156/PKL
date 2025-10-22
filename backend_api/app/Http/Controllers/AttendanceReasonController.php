@@ -24,6 +24,26 @@ class AttendanceReasonController extends Controller
         ]);
     }
 
+    
+    public function addAutoClockOutReason(Request $request)
+    {
+        $reason = AttendanceReason::where('attendance_id', $request->attendance_id)
+            ->where('auto_clockout', 'true')
+            ->firstOrFail();
+
+        // pastikan attendance nya punya user yg sama
+        if ($reason->attendance->user_id !== auth()->id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $reason->update([
+            'description' => $request->description
+        ]);
+
+        return response()->json(['message' => 'Reason updated successfully']);
+    }
+
+
     public function pending()
     {
         $reasons = AttendanceReason::where('review_status', 'pending')->get();
