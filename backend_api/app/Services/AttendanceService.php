@@ -14,8 +14,8 @@ class AttendanceService
     const WORK_END_TIME = '17:00:00';
     const EARLIEST_CLOCK_IN = '06:00:00';
     const LATEST_CLOCK_IN = '10:00:00';
-    const EARLIEST_CLOCK_OUT = '16:00:00';
-    const LATEST_CLOCK_OUT = '21:00:00';
+    const EARLIEST_CLOCK_OUT = '14:00:00';
+    const LATEST_CLOCK_OUT = '20:00:00';
 
     public function getAllAttendances()
     {
@@ -73,17 +73,22 @@ class AttendanceService
         });
     }
 
-    public function clockOut(array $data, $userId)
+    public function clockOut(array $data, $userId, $isAuto = false)
     {
         $timestamp = Carbon::parse($data['timestamp']);
         
+        if (!$isAuto) {
         $this->validateClockOut($timestamp, $userId);
         $this->validateClockOutTime($timestamp);
 
         $checkOutTime = $timestamp->format('H:i:s');
-        $autoClockout = $checkOutTime > self::WORK_END_TIME;
+        $workEndTime = self::WORK_END_TIME;
+        
+        $isEarly = $checkOutTime < $workEndTime;
+        $isLate = $checkOutTime > $workEndTime;
+        $irregularClockout = $isEarly || $isLate;
 
-        return DB::transaction(function () use ($data, $autoClockout, $userId) {
+        return DB::transaction(function () use ($data, $irregularClockout, $userId, $isEarly, $isLate, $isAuto) {
             $attendance = Attendance::create([
                 'account_id' => $userId,
                 'type' => 'clock_out',
@@ -92,14 +97,24 @@ class AttendanceService
                 'longitude' => $data['longitude'],
                 'photo_path' => $data['photo_path'],
                 'status' => 'approved',
-                'auto_clockout' => $data['auto_clockout'] ?? false,
+                'irregular_clockout' => $irregularClockout,
+                'is_early_leave' => $isEarly,
+                'is_auto_clockout' => $isAuto,
             ]);
 
-            if ($autoClockout) {
+            if ($irregularClockout) {
+                $reasonType = $isAuto ? 'auto_clockout' : ($isEarly ? 'early_clockout' : 'late_clockout');
+                
+                // For manual early clock-out, require description
+                if (!$isAuto && $isEarly && empty($data['description'])) {
+                    throw new \Exception('Please provide a reason for early clock-out.');
+                }
+
                 AttendanceReason::create([
                     'attendance_id' => $attendance->id,
-                    'reason_type' => 'auto_clockout',
-                    'review_status' => 'pending',
+                    'reason_type' => $reasonType,
+                    'description' => $isAuto ? 'Automatic clock-out by system at ' . $data['timestamp'] : ($data['description'] ?? null),
+                    'review_status' => $isAuto ? 'approved' : 'pending', // Auto clock-outs auto-approved
                 ]);
             }
 

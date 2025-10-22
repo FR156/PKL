@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('attendance_reasons', function (Blueprint $table) {
             $table->id();
             $table->foreignId('attendance_id')->constrained('attendances')->onDelete('cascade');
-            $table->enum('reason_type', ['late', 'auto_clockout']);
+            $table->enum('reason_type', ['late', 'early_clockout', 'auto_clockout']);
             $table->text('description')->nullable();
             $table->enum('review_status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->unsignedBigInteger('reviewed_by')->nullable();

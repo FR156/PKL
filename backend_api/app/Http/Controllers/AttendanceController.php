@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Attendance\ClockInRequest;
 use App\Http\Requests\Attendance\ClockOutRequest;
-use App\Http\Requests\ReviewAttendanceRequest;
+use App\Http\Requests\Attendance\ReviewAttendanceRequest;
 use App\Services\AttendanceService;
 use Illuminate\Http\Request;
 

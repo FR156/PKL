@@ -3,10 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttendanceReason;
+use App\Http\Controllers\AttendanceController;
+use App\Models\Attendance;
 use Illuminate\Http\Request;
 
 class AttendanceReasonController extends Controller
 {
+    // GET /api/attendance-reasons/review/{id}
+    public function show($id)
+    {
+        $reason = AttendanceReason::findOrFail($id);
+
+        return response()->json([
+            'message' => 'Reason fetched successfully',
+            'data' => $reason
+        ]);
+    }
+    
     // POST /api/attendance-reasons
     public function store(Request $request)
     {
@@ -19,25 +32,33 @@ class AttendanceReasonController extends Controller
         $reason = AttendanceReason::create($validated);
 
         return response()->json([
-            'message' => 'Reason submitted successfully (dummy)',
+            'message' => 'Reason submitted successfully',
             'data' => $reason
         ]);
     }
 
-    
+    // PUT /api/attendance-reasons/auto-clockout
     public function addAutoClockOutReason(Request $request)
     {
-        $reason = AttendanceReason::where('attendance_id', $request->attendance_id)
-            ->where('auto_clockout', 'true')
+        $request->validate([
+            'description' => 'required|string|max:255',
+        ]);
+
+        // ambil user dari Sanctum
+        $user = $request->user();
+
+        // cari attendance hari ini milik user
+        $attendance = Attendance::where('account_id', $user->id)
+            ->orderByDesc('created_at')
             ->firstOrFail();
 
-        // pastikan attendance nya punya user yg sama
-        if ($reason->attendance->user_id !== auth()->id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
+        // cari reason yang tipe auto_clock_out
+        $reason = AttendanceReason::where('attendance_id', $attendance->id)
+            ->where('reason_type', 'auto_clockout')
+            ->firstOrFail();
 
         $reason->update([
-            'description' => $request->description
+            'description' => $request->description,
         ]);
 
         return response()->json(['message' => 'Reason updated successfully']);

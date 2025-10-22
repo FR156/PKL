@@ -26,7 +26,7 @@ class ClockOutRequest extends FormRequest
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'photo_path' => 'required|string|max:255',
-            'auto_clockout' => 'boolean',
+            'description' => 'required_if:is_early,true|string|max:500',
         ];
     }
 
