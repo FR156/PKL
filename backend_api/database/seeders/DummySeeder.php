@@ -28,10 +28,12 @@ class DummySeeder extends Seeder
             $account->assignRole('supervisor');
         });
 
-        Account::factory(5)->create()->each(function ($account) {
+        Account::factory(4)->create()->each(function ($account) {
             $account->assignRole('employee');
         });
 
-        $this->command->info('10 users created with specific roles: 1 Owner, 2 Manager, 2 Supervisor, 5 Employee');
+        
+
+        $this->command->info('10 users created with specific roles: 1 Owner, 2 Manager, 2 Supervisor, 5 Employee, now Ammar is part of the team!');
     }
 }

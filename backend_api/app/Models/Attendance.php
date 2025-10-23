@@ -19,7 +19,7 @@ class Attendance extends Model
         'photo_path',
         'is_late',
         'status',
-        'auto_clockout',
+        'irregular_clockout',
         'reviewed_by',
         'reviewed_at',
         'reason',

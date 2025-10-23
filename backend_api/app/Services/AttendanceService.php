@@ -14,8 +14,9 @@ class AttendanceService
     const WORK_END_TIME = '17:00:00';
     const EARLIEST_CLOCK_IN = '06:00:00';
     const LATEST_CLOCK_IN = '10:00:00';
-    const EARLIEST_CLOCK_OUT = '14:00:00';
-    const LATEST_CLOCK_OUT = '20:00:00';
+    const EARLIEST_CLOCK_OUT = '16:00:00';
+    const AUTO_CLOCK_OUT = '18:00:00';
+    const LATEST_CLOCK_OUT = '21:00:00';
 
     public function getAllAttendances()
     {
@@ -82,13 +83,17 @@ class AttendanceService
         $this->validateClockOutTime($timestamp);
 
         $checkOutTime = $timestamp->format('H:i:s');
-        $workEndTime = self::WORK_END_TIME;
-        
-        $isEarly = $checkOutTime < $workEndTime;
-        $isLate = $checkOutTime > $workEndTime;
-        $irregularClockout = $isEarly || $isLate;
+        $earlyClockout = $checkOutTime < self::WORK_END_TIME;
+        $autoClockout = $checkOutTime > self::AUTO_CLOCK_OUT;
+        $irregularClockout = $autoClockout || $earlyClockout;
 
-        return DB::transaction(function () use ($data, $irregularClockout, $userId, $isEarly, $isLate, $isAuto) {
+        if ($earlyClockout && empty($data['description'])) {
+            throw ValidationException::withMessages([
+                'description' => ['You are clocking out early. Please provide a description for early clock out.']
+            ]);
+        }
+
+        return DB::transaction(function () use ($data, $irregularClockout, $autoClockout, $earlyClockout, $userId) {
             $attendance = Attendance::create([
                 'account_id' => $userId,
                 'type' => 'clock_out',
@@ -98,18 +103,18 @@ class AttendanceService
                 'photo_path' => $data['photo_path'],
                 'status' => 'approved',
                 'irregular_clockout' => $irregularClockout,
-                'is_early_leave' => $isEarly,
-                'is_auto_clockout' => $isAuto,
             ]);
 
-            if ($irregularClockout) {
-                $reasonType = $isAuto ? 'auto_clockout' : ($isEarly ? 'early_clockout' : 'late_clockout');
-                
-                // For manual early clock-out, require description
-                if (!$isAuto && $isEarly && empty($data['description'])) {
-                    throw new \Exception('Please provide a reason for early clock-out.');
-                }
+            if ($earlyClockout) {
+                AttendanceReason::create([
+                    'attendance_id' => $attendance->id,
+                    'reason_type' => 'early_clockout',
+                    'review_status' => 'pending',
+                    'description' => $data['description'],
+                ]);
+            }
 
+            if ($autoClockout) {
                 AttendanceReason::create([
                     'attendance_id' => $attendance->id,
                     'reason_type' => $reasonType,
