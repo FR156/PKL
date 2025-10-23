@@ -79,8 +79,9 @@ class AttendanceService
         $timestamp = Carbon::parse($data['timestamp']);
         
         if (!$isAuto) {
-        $this->validateClockOut($timestamp, $userId);
-        $this->validateClockOutTime($timestamp);
+            $this->validateClockOut($timestamp, $userId);
+            $this->validateClockOutTime($timestamp);
+        }
 
         $checkOutTime = $timestamp->format('H:i:s');
         $earlyClockout = $checkOutTime < self::WORK_END_TIME;
@@ -117,9 +118,8 @@ class AttendanceService
             if ($autoClockout) {
                 AttendanceReason::create([
                     'attendance_id' => $attendance->id,
-                    'reason_type' => $reasonType,
-                    'description' => $isAuto ? 'Automatic clock-out by system at ' . $data['timestamp'] : ($data['description'] ?? null),
-                    'review_status' => $isAuto ? 'approved' : 'pending', // Auto clock-outs auto-approved
+                    'reason_type' => 'auto_clockout',
+                    'review_status' => 'pending',
                 ]);
             }
 
