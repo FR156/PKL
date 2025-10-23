@@ -1,86 +1,254 @@
 // src/components/Manager/ManagerSummary.jsx
-import React from 'react';
-// Sesuaikan path import komponen UI berdasarkan struktur baru Anda
-import { GlassCard, StatCard } from '../UI/Cards'; 
-import { COLORS } from '../../utils/constants'; 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'; // Import dari recharts
+import React, { useMemo } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
-// --- B1. Ringkasan Dashboard Manager ---
 const ManagerSummary = ({ employees, pendingLeave, user }) => {
-    // Pindahkan semua state, ref, dan handler dari fungsi ManagerSummary di ManagerDashboard.jsx ke sini.
-    const totalEmployees = employees.length;
-    const activeEmployees = employees.filter(e => e.status === 'Active').length;
-    
-    // Hitung karyawan yang terlambat hari ini (Simulasi)
-    const today = new Date().toLocaleDateString('id-ID'); // Format tanggal yang sama dengan data dummy
-    const lateToday = employees.flatMap(e => e.currentMonthAttendance)
-        .filter(a => a.type === 'Clock In' && a.late && a.date === today).length;
+  const totalEmployees = 9; // Total 9 karyawan untuk dummy data
+  const activeEmployees = 6; // 6 aktif, 3 non-aktif untuk dummy data
+  
+  // Data dummy untuk karyawan yang terlambat hari ini
+  const lateToday = 3; // 3 orang terlambat hari ini
 
-    const pendingLeaveCount = pendingLeave.length;
+  const pendingLeaveCount = pendingLeave?.length || 3; // 3 pending leave untuk dummy
 
-    // Data chart (Simulasi kehadiran bulan ini)
-    const attendanceSummary = employees.flatMap(e => e.currentMonthAttendance)
-        .filter(a => a.type === 'Clock In');
-
-    const totalDaysIn = attendanceSummary.length;
-    const totalLate = attendanceSummary.filter(a => a.late).length;
-    const totalOnTime = totalDaysIn - totalLate;
-    
-    const chartData = [
-        { name: 'Tepat Waktu', value: totalOnTime, color: COLORS.Success },
-        { name: 'Terlambat', value: totalLate, color: COLORS.Error },
-        { name: 'Cuti Pending', value: pendingLeaveCount, color: COLORS.Warning },
+  // Data DUMMY untuk line chart (kehadiran 7 hari terakhir)
+  const getLast7DaysData = () => {
+    return [
+      { 
+        date: 'Mon, Dec 1', 
+        onTime: 3, 
+        late: 3, 
+        absent: 3,
+        total: 6
+      },
+      { 
+        date: 'Tue, Dec 2', 
+        onTime: 4, 
+        late: 2, 
+        absent: 3,
+        total: 6
+      },
+      { 
+        date: 'Wed, Dec 3', 
+        onTime: 5, 
+        late: 1, 
+        absent: 3,
+        total: 6
+      },
+      { 
+        date: 'Thu, Dec 4', 
+        onTime: 3, 
+        late: 3, 
+        absent: 3,
+        total: 6
+      },
+      { 
+        date: 'Fri, Dec 5', 
+        onTime: 6, 
+        late: 0, 
+        absent: 3,
+        total: 6
+      },
+      { 
+        date: 'Sat, Dec 6', 
+        onTime: 2, 
+        late: 4, 
+        absent: 3,
+        total: 6
+      },
+      { 
+        date: 'Sun, Dec 7', 
+        onTime: 3, 
+        late: 3, 
+        absent: 3,
+        total: 6
+      }
     ];
-    
-    // Filter data chart yang valuenya > 0
-    const filteredChartData = chartData.filter(item => item.value > 0);
+  };
 
-    return (
-        <div>
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
-                <i className="fas fa-chart-pie mr-3 text-blue-600"></i> Ringkasan Kinerja Tim
-            </h2>
+  const attendanceData = getLast7DaysData();
 
-            {/* Statistik Utama */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <StatCard title="Total Karyawan" value={totalEmployees} icon="fas fa-users" color="blue" />
-                <StatCard title="Karyawan Aktif" value={activeEmployees} icon="fas fa-user-check" color="green" />
-                <StatCard title="Terlambat Hari Ini" value={lateToday} icon="fas fa-hourglass-end" color="red" />
-                <StatCard title="Cuti Pending" value={pendingLeaveCount} icon="fas fa-plane-departure" color="yellow" />
+  // Data DUMMY untuk bar chart (status karyawan)
+  const employeeStatusData = [
+    { name: 'Active', value: 6, color: '#10B981' },
+    { name: 'Inactive', value: 2, color: '#EF4444' },
+    { name: 'On Leave', value: 1, color: '#F59E0B' },
+  ];
+
+  // Statistik tambahan berdasarkan data dummy
+  const averageAttendance = (attendanceData.reduce((sum, day) => sum + day.total, 0) / 7).toFixed(1);
+  const attendanceRate = ((attendanceData.reduce((sum, day) => sum + day.total, 0) / (totalEmployees * 7)) * 100).toFixed(1);
+
+  return (
+    <div className="space-y-6">
+      {/* Statistik Utama */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-4 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+          <div className="flex items-center">
+            <div className="bg-blue-100 p-3 rounded-xl">
+              <i className="fas fa-users text-blue-600 text-lg"></i>
             </div>
-
-            {/* Chart Kehadiran */}
-            <GlassCard className="mt-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-700">Kehadiran Tim Bulan Ini</h3>
-                <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={filteredChartData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
-                                paddingAngle={5}
-                                dataKey="value"
-                                labelLine={false}
-                                label={({ name, value }) => `${name}: ${value}`}
-                            >
-                                {filteredChartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Pie>
-                            <Tooltip formatter={(value, name) => [value, name]} />
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-                    {totalDaysIn === 0 && (
-                        <p className="text-center text-gray-500 mt-4">Belum ada data absensi bulan ini.</p>
-                    )}
-                </div>
-            </GlassCard>
+            <div className="ml-4">
+              <p className="text-sm text-gray-600">Total Team</p>
+              <p className="text-2xl font-bold text-gray-800">{totalEmployees}</p>
+            </div>
+          </div>
         </div>
-    );
+
+        <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-4 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+          <div className="flex items-center">
+            <div className="bg-green-100 p-3 rounded-xl">
+              <i className="fas fa-user-check text-green-600 text-lg"></i>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm text-gray-600">Active Members</p>
+              <p className="text-2xl font-bold text-gray-800">{activeEmployees}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-4 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+          <div className="flex items-center">
+            <div className="bg-red-100 p-3 rounded-xl">
+              <i className="fas fa-hourglass-end text-red-600 text-lg"></i>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm text-gray-600">Late Today</p>
+              <p className="text-2xl font-bold text-gray-800">{lateToday}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-4 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+          <div className="flex items-center">
+            <div className="bg-yellow-100 p-3 rounded-xl">
+              <i className="fas fa-plane-departure text-yellow-600 text-lg"></i>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm text-gray-600">Pending Leave</p>
+              <p className="text-2xl font-bold text-gray-800">{pendingLeaveCount}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Line Chart - Attendance Trend */}
+        <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Attendance Trend (Last 7 Days)</h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={attendanceData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#6B7280"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="#6B7280"
+                  fontSize={12}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: '12px'
+                  }}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="onTime" 
+                  stroke="#10B981" 
+                  strokeWidth={2}
+                  name="On Time"
+                  dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="late" 
+                  stroke="#F59E0B" 
+                  strokeWidth={2}
+                  name="Late"
+                  dot={{ fill: '#F59E0B', strokeWidth: 2, r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="absent" 
+                  stroke="#EF4444" 
+                  strokeWidth={2}
+                  name="Absent"
+                  dot={{ fill: '#EF4444', strokeWidth: 2, r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Bar Chart - Employee Status */}
+        <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Team Status Distribution</h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={employeeStatusData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="#6B7280"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="#6B7280"
+                  fontSize={12}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: '12px'
+                  }}
+                />
+                <Bar 
+                  dataKey="value" 
+                  name="Employees"
+                  radius={[4, 4, 0, 0]}
+                >
+                  {employeeStatusData.map((entry, index) => (
+                    <cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)] text-center">
+          <i className="fas fa-chart-line text-blue-500 text-2xl mb-2"></i>
+          <p className="text-sm text-gray-600">Avg Daily Attendance</p>
+          <p className="text-2xl font-bold text-gray-800">{averageAttendance}</p>
+        </div>
+
+        <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)] text-center">
+          <i className="fas fa-percentage text-green-500 text-2xl mb-2"></i>
+          <p className="text-sm text-gray-600">Attendance Rate</p>
+          <p className="text-2xl font-bold text-gray-800">{attendanceRate}%</p>
+        </div>
+
+        <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)] text-center">
+          <i className="fas fa-calendar-check text-purple-500 text-2xl mb-2"></i>
+          <p className="text-sm text-gray-600">Pending Approvals</p>
+          <p className="text-2xl font-bold text-gray-800">{pendingLeaveCount}</p>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ManagerSummary;

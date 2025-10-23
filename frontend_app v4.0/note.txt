@@ -73,17 +73,18 @@ ekspor pdf nya jelas informasi pemotongan dll
 manager
 ringkasan : total karyawan, cuti pending, terlambat, aktifitas absen, karyawan aktif
 kelola tim : CRUD karyawan, create >; NIK, nama, divisi, email, nomor telepon, alamat. read >; lihat data. update>; edit semua data kec cv sama ijazah. delete>; hapus kolom search
-persetujuan cuti : judul, jenis cuti, lama hari, alasan / keterangan /bukti halangan -> upload file kalau sakit dan cuti biasa kolom search dan riwayat
+persetujuan cuti : judul, jenis cuti, lama hari, alasan / keterangan /bukti halangan -> file kalau sakit dan cuti biasa kolom search dan riwayat
 persetujuan profil : nama karyawan, sama apa yang mau di ubah
-persetujuan absensi izin telat, sakit 
-laporan selfi : foto -> data detail {status cek in / out ; keterangan tepat waktu, telat, balik cepat, jam, nama lokasi, lon dan lan}
-absensi saya : sama kaya karyawan
+laporan tambahan gaji : fitur tambahan naik gaji dan kejelasan pemotongan gaji bisa potong gaji, judul pemotongan, contohnya bpjs dan bisa milih karyawan siapa dan divisi mana
+laporan selfi karyawan : foto -> data detail {status cek in / out ; keterangan tepat waktu, telat, balik cepat, jam, nama lokasi, lon dan lan}
+tambah tab baru persetujuan absensi izin telat, izin cepat pulang
+absensi saya : sama kaya karyawan bisa ambil foto 
 profil : sama kaya karyawan beda divisi 
-gaji : fitur tambahan naik gaji
-persetujuan permisi terlambat dan cepat pulang
-atur fitur 
-cuti : bisa atur cuti ( custom )
-bisa potong gaji, judul pemotongan, contohnya bpjs dan bisa milih karyawan siapa dan divisi mana
+manager bisa izin cuti juga dan di approve owner
+performa manager bisa
+salary
+lainnya di salaryreport itu di tambah input type text
+proses---
 
 supervisor
 ringkasan : total karyawan , total karyawan aktif , tugas yang di pending, terlambat (absensi perlu koreksi di hapus)
@@ -91,17 +92,19 @@ persetujuan tugas : liat tugasnya -> detail tugas , approve / denied tambahkan k
 persetujuan absensi : nama karyawan, divisi, status ( clock in / out ) keterangan ( terlambat / tepat waktu / pulang cepat )
 peforma : 
 
-loading
-hilangkan delay loading buatan -> jadi loading memuat data lgsg dari api 
-loadingnya punya masih punya pribadi
-
 security
 cari semua kerentanan dan ganti -> refrector code
 
-responsif 
-header responsif dan perpaduan warna
-
-jarak kantor di ubah jadi sesuai keperluan, tutorial js
+jarak kantor di ubah jadi sesuai keperluan
 
 
 
+NANTI 1 DASHBOARD AJA DAN TAMBAHKAN PERMISSION CHECKER HAPUS SEMUA DASHBOARD KECUALI DASHBOARD EMPLOYEE DAN DI SITU SEMUANYA DI PANGGIL
+file unievrsal : profil, team management; owner cuma bisa liat aja, absensi, cuti, salary, performa, summary
+
+owner
+bisa kasi tugas ke masing masing karyawan
+
+formatters js harus di update
+
+tugas role manager di kirim ke si owner

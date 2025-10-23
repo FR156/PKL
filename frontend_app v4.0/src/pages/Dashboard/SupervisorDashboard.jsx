@@ -1,9 +1,7 @@
-// src/pages/dashboard/SupervisorDashboard.jsx
+// src/pages/dashboard/SupervisorDashboard.jsx (patch)
+import React, { useState } from 'react';
 
-import React, { useState, useMemo } from 'react';
-import { TabButton } from '../../components/Shared/Modals/componentsUtilityUI.jsx';
-
-// Import SEMUA Komponen Supervisor (Path: ../../components/)
+// Import SEMUA Komponen Supervisor
 import SupervisorSummary from '../../components/Summary/SupervisorSummary.jsx';
 import SupervisorTaskApproval from '../../components/Approvals/SupervisorTaskApproval.jsx';
 import SupervisorAttendanceApproval from '../../components/Approvals/SupervisorAttendanceApproval.jsx';
@@ -12,120 +10,246 @@ import SupervisorAttendance from '../../components/Absensi/SupervisorAttendance.
 import SupervisorProfile from '../../components/Profiles/SupervisorProfile.jsx';
 
 const SupervisorDashboard = (props) => {
-    // Inisialisasi tab berdasarkan peran Supervisor
-    const [activeTab, setActiveTab] = useState('summary');
-    
-    // Destrukturisasi props (termasuk state baru dari useAuth)
-    const { 
-        user, 
-        employees, 
-        setEmployees,
-        workSettings, 
-        setAuthUser,
-        pendingTasks,
-        setPendingTasks,
-        pendingAttendance,
-        setPendingAttendance,
-        pendingProfileChanges,
-        setPendingProfileChanges
-    } = props;
+  // Provide safe defaults for props (defensive)
+  const {
+    user,
+    employees = [],
+    setEmployees = () => {},
+    workSettings,
+    pendingProfileChanges = [],
+    setPendingProfileChanges = () => {},
+    setAuthUser = () => {},
+    pendingTasks = [],
+    setPendingTasks = () => {},
+    pendingAttendance = [],
+    setPendingAttendance = () => {}
+  } = props;
 
-    // Pastikan workSettings aman
-    const safeWorkSettings = useMemo(() => workSettings || {}, [workSettings]);
+  const [activeTab, setActiveTab] = useState('summary');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const safeWorkSettings = workSettings || {};
 
-    return (
-        <div className="container mx-auto px-4 py-8">
-            {/* Header Dashboard */}
-            <h1 className="text-3xl font-extrabold text-gray-800 mb-6 border-b pb-2">
-                <i className="fas fa-chalkboard-teacher mr-3 text-purple-600"></i> Dashboard Supervisor
-            </h1>
+  const tabs = [
+    { id: 'summary', label: 'Summary', icon: 'fa-chart-pie' },
+    { id: 'taskApproval', label: 'Task Approval', icon: 'fa-tasks' },
+    { id: 'attendanceApproval', label: 'Attendance Approval', icon: 'fa-user-check' },
+    { id: 'performance', label: 'Team Performance', icon: 'fa-chart-line' },
+    { id: 'attendance', label: 'My Attendance', icon: 'fa-clock' },
+    { id: 'profile', label: 'Profile', icon: 'fa-user' }
+  ];
 
-            {/* Navigasi Tab */}
-            <div className="flex flex-wrap gap-2 md:gap-4 mb-8 border-b-2 pb-2 overflow-x-auto whitespace-nowrap">
-                <TabButton isActive={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>
-                    <i className="fas fa-chart-pie mr-2"></i> Ringkasan
-                </TabButton>
-                <TabButton isActive={activeTab === 'taskApproval'} onClick={() => setActiveTab('taskApproval')}>
-                    <i className="fas fa-tasks mr-2"></i> Persetujuan Tugas ({pendingTasks?.length || 0})
-                </TabButton>
-                <TabButton isActive={activeTab === 'attendanceApproval'} onClick={() => setActiveTab('attendanceApproval')}>
-                    <i className="fas fa-user-check mr-2"></i> Persetujuan Absensi ({pendingAttendance?.length || 0})
-                </TabButton>
-                <TabButton isActive={activeTab === 'performance'} onClick={() => setActiveTab('performance')}>
-                    <i className="fas fa-chart-line mr-2"></i> Performa Tim
-                </TabButton>
-                <TabButton isActive={activeTab === 'attendance'} onClick={() => setActiveTab('attendance')}>
-                    <i className="fas fa-clock mr-2"></i> Absensi Saya
-                </TabButton>
-                <TabButton isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')}>
-                    <i className="fas fa-user mr-2"></i> Profil
-                </TabButton>
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'summary':
+        return (
+          <SupervisorSummary 
+            employees={employees} 
+            pendingTasks={pendingTasks}
+            pendingAttendance={pendingAttendance}
+          />
+        );
+      case 'taskApproval':
+        return (
+          <SupervisorTaskApproval 
+            employees={employees}
+            setEmployees={setEmployees}
+            pendingTasks={pendingTasks}
+            setPendingTasks={setPendingTasks} 
+          />
+        );
+      case 'attendanceApproval':
+        return (
+          <SupervisorAttendanceApproval 
+            employees={employees}
+            setEmployees={setEmployees}
+            pendingAttendance={pendingAttendance}
+            setPendingAttendance={setPendingAttendance}
+          />
+        );
+      case 'performance':
+        return (
+          <SupervisorPerformanceReport 
+            employees={employees}
+            setEmployees={setEmployees} 
+          />
+        );
+      case 'attendance':
+        return (
+          <SupervisorAttendance 
+            user={user}
+            employees={employees}
+            setEmployees={setEmployees}
+            workSettings={safeWorkSettings}
+          />
+        );
+      case 'profile':
+        return (
+          <SupervisorProfile 
+            user={user} 
+            employees={employees} 
+            setEmployees={setEmployees}
+            setAuthUser={setAuthUser}
+            pendingProfileChanges={pendingProfileChanges}
+            setPendingProfileChanges={setPendingProfileChanges}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#D3DFFE] pt-16 lg:pt-22">
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden fixed top-20 left-4 z-50">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="bg-[#19183B] backdrop-blur-2xl rounded-2xl p-3 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border border-white/20 hover:shadow-[0_8px_32px_0_rgba(31,38,135,0.25)] transition-all duration-300"
+        >
+          <i className={`fas ${sidebarOpen ? 'fa-times' : 'fa-bars'} text-gray-700/90`}></i>
+        </button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div className="container mx-auto px-3 sm:px-4 py-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Sidebar */}
+          <div className={`
+            lg:w-64 transform transition-all duration-300 ease-in-out
+            ${sidebarOpen 
+              ? 'translate-x-0 opacity-100' 
+              : '-translate-x-full opacity-0 lg:translate-x-0 lg:opacity-100'
+            }
+            fixed lg:static left-0 top-20 h-full lg:h-auto z-40 w-64 lg:w-auto
+          `}>
+            <div className="bg-white/30 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] p-4 lg:sticky lg:top-24 border border-white/20 h-full lg:h-auto overflow-y-auto">
+              {/* Close button for mobile */}
+              <div className="flex justify-between items-center mb-6 lg:hidden">
+                <h3 className="text-lg font-semibold text-gray-800/90">Menu</h3>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 rounded-2xl hover:bg-white/20 transition-all duration-200"
+                >
+                  <i className="fas fa-times text-gray-600/80"></i>
+                </button>
+              </div>
+
+              {/* User Info */}
+              <div className="flex items-center mb-6 p-3 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)] text-left ">
+                <div className="relative">
+                  <img
+                    src={user?.profileImage || 'https://picsum.photos/seed/supervisor/48/48.jpg'}
+                    alt="Profile"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white/50 shadow-[0_4px_16px_0_rgba(31,38,135,0.2)]"
+                  />                
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-semibold text-gray-600/80 truncate max-w-[120px]">{user?.name || 'Supervisor'}</p>
+                  <p className="text-xs text-gray-600/80 capitalize">Supervisor</p>
+                </div>
+              </div>
+
+              {/* Navigation */}
+              <div className="space-y-2 ">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center px-4 py-3 rounded-xl focus:outline-none ${
+                      activeTab === tab.id
+                        ? 'bg-[#708993] text-white shadow-md'
+                        : 'text-black'
+                    }`}
+                  >
+                    <i className={`fas ${tab.icon} mr-3 text-sm ${activeTab === tab.id ? 'text-white' : 'text-black-500'}`}></i>
+                    <span className={`text-sm font-medium ${activeTab === tab.id ? 'text-white' : 'text-gray-700'}`}>{tab.label}</span>
+                    {activeTab === tab.id && (
+                      <i className="fas fa-chevron-right ml-auto text-xs text-white"></i>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Quick Stats */}
+              <div className="mt-6 pt-4 border-t border-white/20">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-green-400/20 backdrop-blur-xl rounded-2xl p-2 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+                    <i className="fas fa-users text-green-500/80 text-sm"></i>
+                    <p className="text-xs text-gray-600/80 mt-1">Team: {employees.filter(e => e.role === 'employee').length}</p>
+                  </div>
+                  <div className="bg-blue-400/20 backdrop-blur-xl rounded-2xl p-2 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+                    <i className="fas fa-tasks text-blue-500/80 text-sm"></i>
+                    <p className="text-xs text-gray-600/80 mt-1">Tasks: {pendingTasks?.length || 0}</p>
+                  </div>
+                  <div className="bg-orange-400/20 backdrop-blur-xl rounded-2xl p-2 border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+                    <i className="fas fa-user-check text-orange-500/80 text-sm"></i>
+                    <p className="text-xs text-gray-600/80 mt-1">Absensi: {pendingAttendance?.length || 0}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Date */}
+              <div className="mt-4 p-3 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/30 shadow-[0_4px_16px_0_rgba(31,38,135,0.1)]">
+                <p className="text-xs text-gray-600/80 text-center">
+                  {new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              </div>
             </div>
+          </div>
 
-            {/* Content Berdasarkan Tab Aktif */}
-            <div className="min-h-[60vh]">
-                {/* 1. Ringkasan */}
-                {activeTab === 'summary' && 
-                    <SupervisorSummary 
-                        employees={employees} 
-                        pendingTasks={pendingTasks}
-                        pendingAttendance={pendingAttendance}
-                    />
-                }
-                
-                {/* 2. Persetujuan Tugas */}
-                {activeTab === 'taskApproval' && 
-                    <SupervisorTaskApproval 
-                        employees={employees}
-                        setEmployees={setEmployees}
-                        pendingTasks={pendingTasks}
-                        setPendingTasks={setPendingTasks} 
-                    />
-                }
-                
-                {/* 3. Persetujuan Absensi */}
-                {activeTab === 'attendanceApproval' && 
-                    <SupervisorAttendanceApproval 
-                        employees={employees}
-                        setEmployees={setEmployees}
-                        pendingAttendance={pendingAttendance}
-                        setPendingAttendance={setPendingAttendance}
-                    />
-                }
-                
-                {/* 4. Penilaian Performa */}
-                {activeTab === 'performance' && 
-                    <SupervisorPerformanceReport 
-                        employees={employees}
-                        setEmployees={setEmployees} 
-                    />
-                }
-                
-                {/* 5. Absensi Saya */}
-                {activeTab === 'attendance' && (
-                    <SupervisorAttendance 
-                        user={user}
-                        employees={employees}
-                        setEmployees={setEmployees}
-                        workSettings={safeWorkSettings}
-                    />
-                )}
-                
-                {/* 6. Profil Supervisor */}
-                {activeTab === 'profile' && (
-                    <SupervisorProfile 
-                        user={user} 
-                        employees={employees} 
-                        setEmployees={setEmployees}
-                        setAuthUser={setAuthUser}
-                        pendingProfileChanges={pendingProfileChanges}
-                        setPendingProfileChanges={setPendingProfileChanges}
-                    />
-                )}
+          {/* Main Content */}
+          <div className="flex-1 lg:ml-0">
+            <div className="bg-white/30 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] p-4 sm:p-6 border border-white/20 min-h-[calc(100vh-6rem)]">
+              {/* Content Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800/90 tracking-tight text-left">
+                    {tabs.find(tab => tab.id === activeTab)?.label}
+                  </h2>
+                  <p className="text-sm text-gray-600/80 mt-1 text-left">
+                    {activeTab === 'summary' && 'Team overview and quick statistics'}
+                    {activeTab === 'taskApproval' && 'Review and approve team task submissions'}
+                    {activeTab === 'attendanceApproval' && 'Approve team attendance and corrections'}
+                    {activeTab === 'performance' && 'Monitor team performance and productivity'}
+                    {activeTab === 'attendance' && 'Track your personal attendance records'}
+                    {activeTab === 'profile' && 'Manage your supervisor profile information'}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="bg-[#708993] backdrop-blur-xl rounded-2xl px-3 py-2 border border-white/30 shadow-[0_4px_16px_0_RGBA(31,38,135,0.1)]">
+                    <span className="text-xs font-medium text-white">
+                      PT. DOODLE INDONESIA
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tab Content */}
+              <div className="mt-4">
+                {renderTabContent()}
+              </div>
             </div>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default SupervisorDashboard;

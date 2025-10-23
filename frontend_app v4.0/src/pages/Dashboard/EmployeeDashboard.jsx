@@ -73,7 +73,7 @@ const EmployeeDashboard = (props) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#D3DFFE] pt-16 lg:pt-20">
+    <div className="min-h-screen bg-[#D3DFFE] pt-16 lg:pt-22">
       {/* Mobile Menu Button */}
       <div className="lg:hidden fixed top-20 left-4 z-50">
         <button

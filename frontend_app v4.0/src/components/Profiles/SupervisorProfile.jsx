@@ -1,11 +1,9 @@
 // src/components/Profiles/SupervisorProfile.jsx
-// KODE INI SAMA PERSIS dengan Manager/Employee Profile
 import React, { useState, useRef, useEffect } from 'react';
-import { PrimaryButton } from '../UI/Buttons.jsx'; 
-import { GlassCard } from '../UI/Cards.jsx'; 
-import { showSwal } from '../../utils/swal.js'; 
+import { PrimaryButton, PrimaryButton2 } from '../UI/Buttons'; 
+import { GlassCard } from '../UI/Cards'; 
+import { showSwal } from '../../utils/swal';
 
-// --- D6. Profil Supervisor ---
 const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pendingProfileChanges, setPendingProfileChanges }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({ ...user });
@@ -17,7 +15,6 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
     const cvInputRef = useRef(null);
     const diplomaInputRef = useRef(null);
 
-    // Supervisor mengirim permintaan ke Manager/Owner (Asumsi Manager yang menyetujui)
     const pendingRequest = pendingProfileChanges.find(p => p.employeeId === user.id);
     
     const handleChange = (e) => {
@@ -29,7 +26,7 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setProfileImage(reader.result); 
+                setProfileImage(reader.result);
             };
             reader.readAsDataURL(file);
         }
@@ -62,13 +59,22 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
         }
 
         if (cvFile && cvFile !== user.cvFile) {
-            // Hanya simpan metadata file untuk simulasi
-            changes.cvFile = { name: cvFile.name, size: cvFile.size, type: cvFile.type, data: 'placeholder' };
+            changes.cvFile = { 
+                name: cvFile.name, 
+                size: cvFile.size, 
+                type: cvFile.type, 
+                lastModified: cvFile.lastModified 
+            };
             hasChanges = true;
         }
 
         if (diplomaFile && diplomaFile !== user.diplomaFile) {
-            changes.diplomaFile = { name: diplomaFile.name, size: diplomaFile.size, type: diplomaFile.type, data: 'placeholder' };
+            changes.diplomaFile = { 
+                name: diplomaFile.name, 
+                size: diplomaFile.size, 
+                type: diplomaFile.type,
+                lastModified: diplomaFile.lastModified
+            };
             hasChanges = true;
         }
 
@@ -78,12 +84,11 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
             return;
         }
 
-        // Kirim permintaan ke Manager/Owner (simulasi)
         handleRequestProfileUpdate(changes);
     };
 
     const handleRequestProfileUpdate = (changes) => {
-        const newRequestId = Date.now(); 
+        const newRequestId = Date.now();
 
         const newRequest = {
             id: newRequestId,
@@ -91,21 +96,22 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
             employeeName: user.name,
             requestedChanges: changes,
             status: 'Pending',
-            requestedAt: new Date().toISOString().split('T')[0]
+            requestedAt: new Date().toISOString().split('T')[0],
+            division: user.division,
+            role: user.role
         };
 
         setPendingProfileChanges(prev => [...prev, newRequest]);
 
         showSwal(
             'Permintaan Terkirim',
-            'Perubahan profil Anda memerlukan persetujuan Manager/Owner. Status: Pending.',
-            'warning'
+            'Perubahan profil Anda memerlukan persetujuan Owner. Status: Pending.',
+            'success'
         );
         setIsEditing(false);
     };
 
     const handleCancel = () => {
-        // Reset form data ke user data awal
         setFormData({ ...user });
         setProfileImage(user.profileImage || null);
         setCvFile(user.cvFile || null);
@@ -114,7 +120,6 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
     };
 
     useEffect(() => {
-        // Sinkronisasi state lokal dengan props user setiap kali user berubah
         setFormData({ ...user });
         setProfileImage(user.profileImage || null);
         setCvFile(user.cvFile || null);
@@ -122,34 +127,52 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
     }, [user]);
 
     return (
-        <GlassCard className="mt-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
-                <i className="fas fa-user-circle mr-3 text-purple-600"></i> Profil Supervisor
-            </h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                    <i className="fas fa-user-circle mr-3 text-[#708993]"></i> Profil Supervisor
+                </h2>
+                
+                {!isEditing && (
+                    <PrimaryButton2 
+                        onClick={() => setIsEditing(true)} 
+                        disabled={!!pendingRequest}
+                        className="bg-[#708993] hover:bg-[#5a727a] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        <i className="fas fa-edit mr-2"></i> Ubah Profil
+                    </PrimaryButton2>
+                )}
+            </div>
 
-            {/* Status Pending Perubahan */}
             {pendingRequest && (
-                <div className="p-4 mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-lg shadow-sm">
-                    <p className="font-bold">Permintaan Perubahan Pending</p>
-                    <p className="text-sm">Anda memiliki permintaan perubahan data yang menunggu persetujuan **Manager/Owner**.</p>
+                <div className="p-4 mb-6 bg-amber-50 border border-amber-200 rounded-lg flex items-start">
+                    <i className="fas fa-clock text-amber-500 mt-1 mr-3"></i>
+                    <div>
+                        <p className="font-medium text-amber-800">Permintaan Perubahan Pending</p>
+                        <p className="text-sm text-amber-700 mt-1">Menunggu persetujuan Owner</p>
+                    </div>
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row gap-6">
-                <div className="md:w-1/3 flex flex-col items-center">
-                    <div className="relative mb-4">
-                        <img
-                            src={profileImage || 'https://picsum.photos/seed/supervisor/150/150.jpg'}
-                            alt="Profile"
-                            className="w-40 h-40 rounded-full object-cover border-4 border-purple-500 shadow-xl"
-                        />
+            <div className="flex flex-col lg:flex-row gap-8">
+                {/* Kolom Kiri: Foto dan Info Utama */}
+                <div className="lg:w-1/3 flex flex-col items-center">
+                    {/* Foto Profil */}
+                    <div className="relative mb-6">
+                        <div className="w-32 h-32 rounded-full bg-gray-100 border-4 border-[#708993] overflow-hidden">
+                            <img
+                                src={profileImage || 'https://picsum.photos/seed/supervisor/150/150.jpg'}
+                                alt="Profile"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
                         {isEditing && (
                             <button
                                 onClick={() => fileInputRef.current.click()}
-                                className="absolute bottom-0 right-0 bg-purple-600 text-white p-2 rounded-full hover:bg-purple-700 transition-colors shadow-lg"
+                                className="absolute -bottom-2 -right-2 bg-[#708993] text-white p-2 rounded-full hover:bg-[#5a727a] transition-colors shadow-lg"
                                 title="Ubah Foto Profil"
                             >
-                                <i className="fas fa-camera"></i>
+                                <i className="fas fa-camera text-sm"></i>
                             </button>
                         )}
                         <input
@@ -161,44 +184,111 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
                         />
                     </div>
                     
-                    <h3 className="text-3xl font-bold text-gray-900 mt-2">{user.name}</h3>
-                    <p className="text-lg font-medium text-purple-600 mt-1 uppercase">SUPERVISOR</p>
-                    <p className="text-sm text-gray-500 mt-1">ID: {user.id}</p>
-
-                    <div className="mt-6 w-full">
-                        <p className="text-sm text-gray-600 font-semibold mb-2">Tanggal Bergabung:</p>
-                        <span className="bg-gray-100 text-gray-700 p-2 rounded-lg text-sm font-mono w-full block text-center">
-                            {user.joinDate}
-                        </span>
-                        <p className="text-sm text-gray-600 font-semibold mt-4 mb-2">Sisa Cuti Tahunan:</p>
-                        <span className="bg-green-100 text-green-700 p-2 rounded-lg text-lg font-extrabold w-full block text-center">
-                            {user.cutiBalance || 0} Hari
-                        </span>
+                    {/* Informasi Utama */}
+                    <div className="text-center w-full">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-1">{user.name}</h3>
+                        <div className="inline-block bg-[#708993] text-white px-3 py-1 rounded-full text-sm font-medium mb-2">
+                            {user.division || 'Supervisi'}
+                        </div>
+                        <p className="text-gray-600 text-sm mb-4 capitalize">{user.role}</p>
+                        
+                        <div className="space-y-3 w-full max-w-xs">
+                            <div className="bg-gray-50 rounded-lg p-3 text-center">
+                                <p className="text-xs text-gray-500 font-medium mb-1">ID Supervisor</p>
+                                <p className="text-gray-800 font-mono">{user.nik || user.id}</p>
+                            </div>
+                            
+                            <div className="bg-gray-50 rounded-lg p-3 text-center">
+                                <p className="text-xs text-gray-500 font-medium mb-1">Tanggal Bergabung</p>
+                                <p className="text-gray-800">{user.joinDate}</p>
+                            </div>
+                            
+                            <div className="bg-green-50 rounded-lg p-3 text-center border border-green-100">
+                                <p className="text-xs text-green-600 font-medium mb-1">Sisa Cuti Tahunan</p>
+                                <p className="text-green-700 font-bold text-lg">{user.cutiBalance || 12} Hari</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="md:w-2/3">
-                    <div className="flex justify-end mb-4">
-                        {isEditing ? (
-                            <div className="space-x-3">
-                                <PrimaryButton onClick={handleCancel} className="bg-gray-500 hover:bg-gray-600" disabled={!!pendingRequest}>
-                                    <i className="fas fa-times mr-2"></i> Batal
-                                </PrimaryButton>
-                                <PrimaryButton onClick={handleSave} disabled={!!pendingRequest}>
-                                    <i className="fas fa-save mr-2"></i> Simpan & Kirim Permintaan
-                                </PrimaryButton>
-                            </div>
-                        ) : (
-                            <PrimaryButton onClick={() => setIsEditing(true)} disabled={!!pendingRequest}>
-                                <i className="fas fa-edit mr-2"></i> Ubah Profil
-                            </PrimaryButton>
-                        )}
-                    </div>
+                {/* Kolom Kanan: Detail Data & Edit Form */}
+                <div className="lg:w-2/3">
+                    {isEditing && (
+                        <div className="flex justify-end gap-3 mb-6 pb-4 border-b border-gray-100">
+                            <button
+                                onClick={handleCancel}
+                                disabled={!!pendingRequest}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            >
+                                <i className="fas fa-times mr-2"></i> Batal
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={!!pendingRequest}
+                                className="bg-[#708993] hover:bg-[#5a727a] text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            >
+                                <i className="fas fa-save mr-2"></i> Simpan & Kirim Permintaan
+                            </button>
+                        </div>
+                    )}
                     
                     <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* ID Supervisor (non-editable) */}
                             <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <label htmlFor="nik" className="block text-sm font-medium text-gray-700 mb-2">ID Supervisor</label>
+                                <input
+                                    type="text"
+                                    id="nik"
+                                    name="nik"
+                                    value={user.nik || user.id || 'SPV001'}
+                                    disabled
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-black"
+                                />
+                            </div>
+
+                            {/* Nama (non-editable) */}
+                            <div>
+                                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap</label>
+                                <input
+                                    type="text"
+                                    id="name"
+                                    name="name"
+                                    value={user.name || ''}
+                                    disabled
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-black"
+                                />
+                            </div>
+
+                            {/* Divisi (non-editable) */}
+                            <div>
+                                <label htmlFor="division" className="block text-sm font-medium text-gray-700 mb-2">Divisi</label>
+                                <input
+                                    type="text"
+                                    id="division"
+                                    name="division"
+                                    value={user.division || 'Supervisi'}
+                                    disabled
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-black"
+                                />
+                            </div>
+
+                            {/* Role (non-editable) */}
+                            <div>
+                                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">Posisi</label>
+                                <input
+                                    type="text"
+                                    id="role"
+                                    name="role"
+                                    value={user.role || 'Supervisor'}
+                                    disabled
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-black"
+                                />
+                            </div>
+
+                            {/* Email */}
+                            <div>
+                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                                 <input
                                     type="email"
                                     id="email"
@@ -206,13 +296,19 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
                                     value={formData.email || ''}
                                     onChange={handleChange}
                                     disabled={!isEditing}
-                                    className={`w-full p-3 border rounded-lg ${isEditing ? 'border-purple-300 focus:ring-purple-500' : 'border-gray-200 bg-gray-50'} transition-all`}
+                                    className={`w-full p-3 border rounded-lg transition-all text-black ${
+                                        isEditing 
+                                            ? 'border-[#708993] focus:border-[#708993] focus:ring-2 focus:ring-[#708993]/20 bg-white' 
+                                            : 'border-gray-200 bg-gray-50'
+                                    }`}
                                     required
+                                    placeholder="Contoh: supervisor@company.com"
                                 />
                             </div>
                             
+                            {/* Telepon */}
                             <div>
-                                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
+                                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">Nomor Telepon</label>
                                 <input
                                     type="tel"
                                     id="phone"
@@ -220,12 +316,18 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
                                     value={formData.phone || ''}
                                     onChange={handleChange}
                                     disabled={!isEditing}
-                                    className={`w-full p-3 border rounded-lg ${isEditing ? 'border-purple-300 focus:ring-purple-500' : 'border-gray-200 bg-gray-50'} transition-all`}
+                                    className={`w-full p-3 border rounded-lg transition-all text-black ${
+                                        isEditing 
+                                            ? 'border-[#708993] focus:border-[#708993] focus:ring-2 focus:ring-[#708993]/20 bg-white' 
+                                            : 'border-gray-200 bg-gray-50'
+                                    }`}
+                                    placeholder="Contoh: 081234567890"
                                 />
                             </div>
                             
-                            <div>
-                                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Alamat Domisili</label>
+                            {/* Alamat */}
+                            <div className="md:col-span-2">
+                                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">Alamat Domisili</label>
                                 <textarea
                                     id="address"
                                     name="address"
@@ -233,48 +335,91 @@ const SupervisorProfile = ({ user, employees, setEmployees, setAuthUser, pending
                                     value={formData.address || ''}
                                     onChange={handleChange}
                                     disabled={!isEditing}
-                                    className={`w-full p-3 border rounded-lg ${isEditing ? 'border-purple-300 focus:ring-purple-500' : 'border-gray-200 bg-gray-50'} transition-all`}
+                                    className={`w-full p-3 border rounded-lg transition-all text-black ${
+                                        isEditing 
+                                            ? 'border-[#708993] focus:border-[#708993] focus:ring-2 focus:ring-[#708993]/20 bg-white' 
+                                            : 'border-gray-200 bg-gray-50'
+                                    }`}
+                                    placeholder="Contoh: Jalan Raya No. 123, Jakarta Pusat, DKI Jakarta"
                                 />
                             </div>
 
-                            <div className="border p-4 rounded-lg">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Curriculum Vitae (CV)</label>
+                            {/* Dokumen: CV */}
+                            <div className="md:col-span-2 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                <label className="block text-sm font-medium text-gray-700 mb-3">Curriculum Vitae (CV)</label>
                                 {isEditing ? (
-                                    <>
-                                        <PrimaryButton onClick={() => cvInputRef.current.click()} className="bg-yellow-500 hover:bg-yellow-600 text-sm py-2 px-3">
-                                            <i className="fas fa-upload mr-2"></i> Ganti CV
-                                        </PrimaryButton>
-                                        <input type="file" ref={cvInputRef} onChange={handleCvChange} accept=".pdf" className="hidden" />
-                                        {cvFile && <p className="mt-2 text-xs text-gray-600">File: <span className="font-semibold">{cvFile.name || cvFile.data?.name || 'Tersimpan'}</span></p>}
-                                    </>
+                                    <div className="flex items-center gap-4">
+                                        <button 
+                                            type="button"
+                                            onClick={() => cvInputRef.current.click()} 
+                                            className="bg-[#708993] hover:bg-[#5a727a] text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                                        >
+                                            <i className="fas fa-upload mr-2"></i> {user.cvFile ? 'Ganti CV' : 'Upload CV'}
+                                        </button>
+                                        <input type="file" ref={cvInputRef} onChange={handleCvChange} accept=".pdf,.doc,.docx" className="hidden" />
+                                        {(cvFile || user.cvFile) && (
+                                            <div className="text-sm text-gray-600">
+                                                <i className="fas fa-file mr-2 text-[#708993]"></i>
+                                                <span className="font-medium">
+                                                    {cvFile?.name || user.cvFile?.name || 'Tersimpan'}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
-                                    <a href="#" onClick={(e) => e.preventDefault()} className="text-blue-600 hover:underline text-sm">
-                                        <i className="fas fa-file-pdf mr-1"></i> Lihat CV (Simulasi)
-                                    </a>
+                                    <div>
+                                        {user.cvFile ? (
+                                            <div className="flex items-center text-[#708993]">
+                                                <i className="fas fa-file-pdf mr-2"></i>
+                                                <span className="font-medium">{user.cvFile.name}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-500 text-sm">Belum ada file CV</span>
+                                        )}
+                                    </div>
                                 )}
                             </div>
 
-                            <div className="border p-4 rounded-lg">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Ijazah Terakhir</label>
+                            {/* Dokumen: Ijazah */}
+                            <div className="md:col-span-2 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                <label className="block text-sm font-medium text-gray-700 mb-3">Ijazah Terakhir</label>
                                 {isEditing ? (
-                                    <>
-                                        <PrimaryButton onClick={() => diplomaInputRef.current.click()} className="bg-yellow-500 hover:bg-yellow-600 text-sm py-2 px-3">
-                                            <i className="fas fa-upload mr-2"></i> Ganti Ijazah
-                                        </PrimaryButton>
-                                        <input type="file" ref={diplomaInputRef} onChange={handleDiplomaChange} accept=".pdf" className="hidden" />
-                                        {diplomaFile && <p className="mt-2 text-xs text-gray-600">File: <span className="font-semibold">{diplomaFile.name || diplomaFile.data?.name || 'Tersimpan'}</span></p>}
-                                    </>
+                                    <div className="flex items-center gap-4">
+                                        <button 
+                                            type="button"
+                                            onClick={() => diplomaInputRef.current.click()} 
+                                            className="bg-[#708993] hover:bg-[#5a727a] text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                                        >
+                                            <i className="fas fa-upload mr-2"></i> {user.diplomaFile ? 'Ganti Ijazah' : 'Upload Ijazah'}
+                                        </button>
+                                        <input type="file" ref={diplomaInputRef} onChange={handleDiplomaChange} accept=".pdf,.jpg,.png" className="hidden" />
+                                        {(diplomaFile || user.diplomaFile) && (
+                                            <div className="text-sm text-gray-600">
+                                                <i className="fas fa-file-alt mr-2 text-[#708993]"></i>
+                                                <span className="font-medium">
+                                                    {diplomaFile?.name || user.diplomaFile?.name || 'Tersimpan'}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
-                                    <a href="#" onClick={(e) => e.preventDefault()} className="text-blue-600 hover:underline text-sm">
-                                        <i className="fas fa-file-alt mr-1"></i> Lihat Ijazah (Simulasi)
-                                    </a>
+                                    <div>
+                                        {user.diplomaFile ? (
+                                            <div className="flex items-center text-[#708993]">
+                                                <i className="fas fa-file-alt mr-2"></i>
+                                                <span className="font-medium">{user.diplomaFile.name}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-500 text-sm">Belum ada file ijazah</span>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>
                     </form>
                 </div>
             </div>
-        </GlassCard>
+        </div>
     );
 };
 

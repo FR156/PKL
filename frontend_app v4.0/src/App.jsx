@@ -1,4 +1,4 @@
-// src/App.jsx (Kode Lengkap)
+// src/App.jsx (patch)
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth.js'; // PATH BARU
 import Header from './components/Shared/Header.jsx'; // PATH BARU
@@ -40,6 +40,17 @@ const App = () => {
     const saved = localStorage.getItem("pendingProfileChanges");
     return saved ? JSON.parse(saved) : [];
   });
+
+  // NEW: pendingTasks + pendingAttendance managed at App level
+  const [pendingTasks, setPendingTasks] = useState(() => {
+    const saved = localStorage.getItem("pendingTasks");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [pendingAttendance, setPendingAttendance] = useState(() => {
+    const saved = localStorage.getItem("pendingAttendance");
+    return saved ? JSON.parse(saved) : [];
+  });
     
   useEffect(() => {
     if (workSettings) {
@@ -51,21 +62,23 @@ const App = () => {
     localStorage.setItem("pendingProfileChanges", JSON.stringify(pendingProfileChanges));
   }, [pendingProfileChanges]);
 
+  // persist pendingTasks & pendingAttendance
+  useEffect(() => {
+    localStorage.setItem("pendingTasks", JSON.stringify(pendingTasks));
+  }, [pendingTasks]);
+
+  useEffect(() => {
+    localStorage.setItem("pendingAttendance", JSON.stringify(pendingAttendance));
+  }, [pendingAttendance]);
+
 
  return (
     <div className="min-h-screen bg-gray-50">
         {isLoading && (
             // Menggunakan backdrop-blur untuk tampilan yang lebih modern
             <div className="fixed inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300">
-                {/* Wrapper untuk Lottie dan teks loading.
-                    Hapus styling background putih dan border-nya.
-                    Tambahkan flex-col dan items-center untuk centering vertikal dan horizontal.
-                */}
                 <div className="flex flex-col items-center justify-center"> 
-                    
-                    {/* EMBED LOTTIE KUSTOM */}
-                    {/* Perbesar ukuran menjadi h-48 w-48 (sekitar 192px x 192px) */}
-                    <div className="h-48 w-48 mb-4"> {/* Ukuran disesuaikan jadi lebih besar */}
+                    <div className="h-48 w-48 mb-4">
                         <DotLottieReact
                             src="https://lottie.host/9581a0e7-e2e2-4ac9-afbd-7d4cface4c28/O3EfZ0vhqK.lottie"
                             loop
@@ -117,7 +130,7 @@ const App = () => {
                 managers={managers}
                 setManagers={setManagers}
                 employees={employees}
-                setEmployees={setEmployees} // Tambahkan ini
+                setEmployees={setEmployees}
                 workSettings={workSettings}
                 setWorkSettings={setWorkSettings}
               />
@@ -129,6 +142,13 @@ const App = () => {
                 employees={employees}
                 setEmployees={setEmployees}
                 workSettings={workSettings}
+                pendingTasks={pendingTasks}
+                setPendingTasks={setPendingTasks}
+                pendingAttendance={pendingAttendance}
+                setPendingAttendance={setPendingAttendance}
+                pendingProfileChanges={pendingProfileChanges}
+                setPendingProfileChanges={setPendingProfileChanges}
+                setAuthUser={setAuthUser}
               />
             )}
           </main>

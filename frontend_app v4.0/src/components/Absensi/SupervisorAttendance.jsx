@@ -1,13 +1,10 @@
-// src/components/Absensi/SupervisorAttendance.jsx
-// KODE INI SAMA PERSIS dengan Manager/Employee Attendance
 import React, { useState, useEffect, useMemo } from 'react';
 import { PrimaryButton, GlassCard } from '../../components/Shared/Modals/componentsUtilityUI.jsx';
 import CameraModal from '../../components/Shared/Modals/CameraModal.jsx';
 import { handleAttendanceClock } from '../../services/DataService.js'; 
 import { showSwal } from '../../utils/swal.js';
 
-// --- D5. Absensi Supervisor (Sama dengan ManagerAttendance) ---
-const SupervisorAttendance = ({ user, employees, setEmployees, workSettings }) => {
+const SupervisorAttendance = ({ user = {}, employees = [], setEmployees = () => {}, workSettings }) => {
     const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
     const [clockType, setClockType] = useState(null);
     const [currentDateTime, setCurrentDateTime] = useState(new Date());
@@ -27,9 +24,13 @@ const SupervisorAttendance = ({ user, employees, setEmployees, workSettings }) =
     }, []);
 
     const today = currentDateTime.toLocaleDateString('id-ID');
-    const userAttendanceToday = user.currentMonthAttendance.filter(
-        a => a.date === today
-    );
+
+    // ✅ SAFE FALLBACK
+    const attendance = Array.isArray(user?.currentMonthAttendance)
+        ? user.currentMonthAttendance
+        : [];
+
+    const userAttendanceToday = attendance.filter(a => a.date === today);
     const clockIn = userAttendanceToday.find(a => a.type === 'Clock In');
     const clockOut = userAttendanceToday.find(a => a.type === 'Clock Out');
 
@@ -57,18 +58,14 @@ const SupervisorAttendance = ({ user, employees, setEmployees, workSettings }) =
                 if (emp.id === user.id) {
                     return {
                         ...emp,
-                        currentMonthAttendance: [...emp.currentMonthAttendance, newRecord],
-                        attendancePhotos: [...emp.attendancePhotos, newPhotoRecord]
+                        currentMonthAttendance: [...(emp.currentMonthAttendance || []), newRecord],
+                        attendancePhotos: [...(emp.attendancePhotos || []), newPhotoRecord]
                     };
                 }
                 return emp;
             });
             
             setEmployees(updatedEmployees);
-            // Karena absensi milik Supervisor (user), kita juga perlu update authUser
-            // Namun, dalam konteks dashboard, props 'user' sudah mencerminkan state yang benar jika App.jsx menangani update ini melalui setEmployees
-            // Jika Anda ingin mengupdate user langsung:
-            // setAuthUser(updatedEmployees.find(emp => emp.id === user.id)); 
         }
     };
     
@@ -113,7 +110,8 @@ const SupervisorAttendance = ({ user, employees, setEmployees, workSettings }) =
             <GlassCard>
                 <h3 className="text-xl font-bold mb-4 text-gray-700 border-b pb-2">Riwayat Absensi ({new Date().toLocaleString('id-ID', { month: 'long' })})</h3>
                 <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                    {[...user.currentMonthAttendance].reverse().map((att, index) => (
+
+                    {[...(user?.currentMonthAttendance || [])].reverse().map((att, index) => (
                         <div key={index} className={`p-3 rounded-lg shadow-sm flex justify-between items-center ${att.type === 'Clock In' ? (att.late ? 'bg-red-50' : 'bg-green-50') : 'bg-gray-50'}`}>
                             <div className="flex-1">
                                 <p className="font-semibold text-gray-800">{att.date} <span className={`text-xs ml-2 px-2 py-0.5 rounded-full ${att.type === 'Clock In' ? 'bg-blue-200 text-blue-800' : 'bg-orange-200 text-orange-800'}`}>{att.type}</span></p>
@@ -126,11 +124,12 @@ const SupervisorAttendance = ({ user, employees, setEmployees, workSettings }) =
                                 {att.earlyLeave && att.type === 'Clock Out' && (
                                     <p className="text-xs font-bold text-red-600">Pulang Awal!</p>
                                 )}
-                                <p className="text-xs text-gray-500 mt-1" title={att.location}>Lokasi: {att.location.split('(')[0]}</p>
+                                <p className="text-xs text-gray-500 mt-1" title={att.location}>Lokasi: {att.location?.split('(')[0]}</p>
                             </div>
                         </div>
                     ))}
-                    {user.currentMonthAttendance.length === 0 && (
+
+                    {(user?.currentMonthAttendance?.length || 0) === 0 && (
                         <p className="text-center text-gray-500 py-4">Belum ada riwayat absensi bulan ini.</p>
                     )}
                 </div>
