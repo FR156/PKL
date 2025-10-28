@@ -5,10 +5,11 @@ namespace App\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AttendancePhotoService
 {
-    public function upload(UploadedFile $file): string
+    public function upload(UploadedFile $file, $timestamp = null): string
     {
         \Log::info('Upload started', [
             'original_name' => $file->getClientOriginalName(),
@@ -28,8 +29,15 @@ class AttendancePhotoService
             throw new \Exception('File upload failed');
         }
 
+        // Use provided timestamp or current time
+        if ($timestamp) {
+            $time = Carbon::parse($timestamp);
+        } else {
+            $time = now();
+        }
+
         // Generate unique filename
-        $filename = 'attendance_' . time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+        $filename = 'attendance_' . $time->format('Y-m-d_H-i-s') . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
 
         // Store file with explicit disk configuration
         $path = $file->storeAs('attendance_photos', $filename, 'public');

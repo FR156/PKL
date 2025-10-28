@@ -56,7 +56,7 @@ class AttendanceService
             // Handle file upload with proper validation
             if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
                 $photoService = app(AttendancePhotoService::class);
-                $path = $photoService->upload($data['photo']);
+                $path = $photoService->upload($data['photo'], $data['timestamp']);
                 
                 \Log::info('File uploaded successfully', ['path' => $path]);
             } else {
