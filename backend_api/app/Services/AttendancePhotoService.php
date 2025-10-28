@@ -9,7 +9,7 @@ use Carbon\Carbon;
 
 class AttendancePhotoService
 {
-    public function upload(UploadedFile $file, $timestamp = null): string
+    public function upload(UploadedFile $file, $userId = null, $timestamp = null): string
     {
         \Log::info('Upload started', [
             'original_name' => $file->getClientOriginalName(),
@@ -37,7 +37,7 @@ class AttendancePhotoService
         }
 
         // Generate unique filename
-        $filename = 'attendance_' . $time->format('Y-m-d_H-i-s') . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+        $filename = 'attendance_' . 'userId_' . $userId . '_timestamp_' . $time->format('Y-m-d_H-i-s') . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
 
         // Store file with explicit disk configuration
         $path = $file->storeAs('attendance_photos', $filename, 'public');
