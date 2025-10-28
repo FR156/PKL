@@ -92,6 +92,10 @@ persetujuan tugas : liat tugasnya -> detail tugas , approve / denied tambahkan k
 persetujuan absensi : nama karyawan, divisi, status ( clock in / out ) keterangan ( terlambat / tepat waktu / pulang cepat )
 peforma : 
 
+owner:
+kenapa skor karyawan rendah itu tercatat semua kenapa, contoh daftar tugas yg blm dia siapkan masih ada atau tercatat
+
+
 security
 cari semua kerentanan dan ganti -> refrector code
 
@@ -100,7 +104,7 @@ jarak kantor di ubah jadi sesuai keperluan
 
 
 NANTI 1 DASHBOARD AJA DAN TAMBAHKAN PERMISSION CHECKER HAPUS SEMUA DASHBOARD KECUALI DASHBOARD EMPLOYEE DAN DI SITU SEMUANYA DI PANGGIL
-file unievrsal : profil, team management; owner cuma bisa liat aja, absensi, cuti, salary, performa, summary
+file unievrsal : profil, team management; owner cuma bisa liat aja, absensi, cuti, performa, summary, pengaturan, payroll report, my salary, manajemen crud karyawan dan role lainnya  
 
 owner
 bisa kasi tugas ke masing masing karyawan
@@ -108,3 +112,12 @@ bisa kasi tugas ke masing masing karyawan
 formatters js harus di update
 
 tugas role manager di kirim ke si owner
+
+checkerpermission
+responsif kamera hp 
+setelah habis jam terlambat itu clockinnya di disabled 
+
+tab tambabhan lupa login/clockout
+kalau lupa clock in dan lewat jam terlambat itu button clockinnya di disable dan si button clockoutnya di enable
+
+filter divisi di manager payroll report

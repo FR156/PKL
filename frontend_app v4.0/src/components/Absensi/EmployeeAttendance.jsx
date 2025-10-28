@@ -15,7 +15,6 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
     const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
     const [attendanceType, setAttendanceType] = useState('');
     const [isSuccessEffect, setIsSuccessEffect] = useState(false);
-    const [isClockDisabled, setIsClockDisabled] = useState(false);
     const [locationStatus, setLocationStatus] = useState('');
     const [pendingPermission, setPendingPermission] = useState(null);
 
@@ -93,16 +92,6 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                 if (record.permissionFile) {
                     acc[date].permissionFile = record.permissionFile;
                 }
-            } else if (record.type === 'Clock Out (Izin Cepat Pulang)') {
-                // Special case for automatic clock out with early permission
-                acc[date].clockOut = record.time;
-                acc[date].earlyOut = true;
-                acc[date].status = 'Pulang Cepat';
-                acc[date].reason = record.reason;
-                acc[date].permissionNote = record.permissionNote;
-                acc[date].hasPermission = true;
-                acc[date].permissionType = 'early_out';
-                acc[date].permissionFile = record.permissionFile;
             }
             return acc;
         }, {});
@@ -114,48 +103,6 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
 
         setGroupedAttendance(array);
     }, [attendanceHistory]);
-
-    // Auto-disable tombol dan auto-clockout
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const now = new Date();
-            const currentTime = now.toTimeString().slice(0, 5);
-            
-            // Check if current time is after work end time
-            if (currentTime >= WORK_END) {
-                setIsClockDisabled(true);
-                
-                // Auto clock-out jika belum clock out
-                if (isClockedIn && (!lastAttendance || lastAttendance.type !== 'Clock Out')) {
-                    showSwal(
-                        'Belum Clock Out',
-                        'Anda belum melakukan Clock Out, harap isi alasan:',
-                        'input'
-                    ).then(({ value }) => {
-                        const reason = value || 'Tidak ada alasan';
-                        const newRecord = {
-                            id: Date.now(),
-                            userId: user.id,
-                            name: user.name,
-                            date: now.toLocaleDateString('id-ID'),
-                            time: currentTime,
-                            type: 'Clock Out (Otomatis)',
-                            reason,
-                            isAuto: true,
-                            isLateClockOut: true,
-                            earlyOut: false
-                        };
-                        setLastAttendance(newRecord);
-                        setAttendanceHistory(prev => [newRecord, ...prev]);
-                    });
-                }
-            } else {
-                setIsClockDisabled(false);
-            }
-        }, 60000);
-        
-        return () => clearInterval(interval);
-    }, [isClockedIn, lastAttendance, WORK_END]);
 
     // Check location permission on component mount
     useEffect(() => {
@@ -198,7 +145,7 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                     const officeLon = 98.7294571;
                     const distance = calculateDistance(latitude, longitude, officeLat, officeLon);
                     
-                    if (distance > 1000) { // 200 meter radius
+                    if (distance > 1000) { // 1000 meter radius
                         showSwal(
                             'Lokasi Diluar Radius', 
                             `Anda berada ${distance.toFixed(0)} meter dari kantor. Maksimal radius 1000 meter.`, 
@@ -234,7 +181,7 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                         setIsPermissionModalOpen(true);
                         setIsClocking(false);
                     } else {
-                        // Proceed directly to camera
+                        // Proceed directly to camera for selfie
                         setIsCameraModalOpen(true);
                         setIsClocking(false);
                     }
@@ -289,44 +236,8 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
             );
 
             if (permissionResult.success) {
-                // If this is an early out permission, create automatic clock out record
-                if (pendingPermission.type === 'Out') {
-                    const now = new Date();
-                    const currentTime = now.toTimeString().slice(0, 5);
-                    const date = now.toLocaleDateString('id-ID');
-                    
-                    const autoClockOutRecord = {
-                        id: Date.now(),
-                        userId: user.id,
-                        name: user.name,
-                        date,
-                        time: currentTime,
-                        type: 'Clock Out (Izin Cepat Pulang)',
-                        reason: permissionData.note,
-                        isAuto: true,
-                        isEarlyLeave: true,
-                        permissionNote: permissionData.note,
-                        permissionFile: permissionData.file,
-                        hasPermission: true,
-                        permissionType: 'early_out'
-                    };
-                    
-                    setLastAttendance(autoClockOutRecord);
-                    setAttendanceHistory(prev => [autoClockOutRecord, ...prev]);
-                    
-                    showSwal(
-                        'Berhasil', 
-                        'Izin cepat pulang telah disetujui. Clock out otomatis telah dicatat.', 
-                        'success'
-                    );
-                    
-                    // Reset pending permission
-                    setPendingPermission(null);
-                    setIsClocking(false);
-                } else {
-                    // For late permission, proceed with normal clock in
-                    setIsCameraModalOpen(true);
-                }
+                // Setelah izin disetujui, lanjutkan ke selfie untuk absensi
+                setIsCameraModalOpen(true);
             }
         } catch (err) {
             console.error('Gagal mengajukan izin:', err);
@@ -474,9 +385,9 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                     <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
                         <button
                             onClick={() => handleClock('In')}
-                            disabled={isClockedIn || isClocking || isClockDisabled}
+                            disabled={isClockedIn || isClocking}
                             className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-white transition-all duration-300 flex items-center justify-center border-none focus:outline-none ${
-                                isClockedIn || isClockDisabled
+                                isClockedIn
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-[#708993] hover:bg-[#5a6f7a] shadow-lg hover:shadow-xl'
                             }`}
@@ -491,9 +402,9 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
 
                         <button
                             onClick={() => handleClock('Out')}
-                            disabled={!isClockedIn || isClocking || isClockDisabled}
+                            disabled={!isClockedIn || isClocking}
                             className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-white transition-all duration-300 flex items-center justify-center border-none focus:outline-none ${
-                                !isClockedIn || isClockDisabled
+                                !isClockedIn
                                     ? 'bg-gray-400 cursor-not-allowed'
                                     : 'bg-red-500 hover:bg-red-600 shadow-lg hover:shadow-xl'
                             }`}
