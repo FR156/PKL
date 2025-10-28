@@ -20,7 +20,6 @@ return new class extends Migration
             $table->decimal('longitude', 10, 6);
             $table->string('photo_path');
             $table->boolean('is_late')->default(false);
-            $table->boolean('is_early_leave')->default(false);
             $table->enum('status', ['approved', 'rejected', 'auto'])->default('approved');
             $table->boolean('irregular_clockout')->default(false);
             $table->foreignId('reviewed_by')->nullable()->constrained('accounts');

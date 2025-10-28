@@ -31,7 +31,7 @@ class AttendanceController extends Controller
         return response()->json($attendance);
     }
 
-    // Clock In function
+    // Clock In controller
     public function clockIn(ClockInRequest $request)
     {
         try {
@@ -48,7 +48,7 @@ class AttendanceController extends Controller
         }
     }
 
-    // Clock Out
+    // Clock Out controller
     public function clockOut(ClockOutRequest $request)
     {
         try {

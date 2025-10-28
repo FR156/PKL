@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\AttendanceReason;
+use App\Services\AttendancePhotoService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -42,7 +43,7 @@ class AttendanceService
 
         $checkInTime = $timestamp->format('H:i:s');
         $isLate = $checkInTime > self::WORK_START_TIME;
-
+        
         if ($isLate && empty($data['description'])) {
             throw ValidationException::withMessages([
                 'description' => ['You are late. Please provide a description for lateness.']
@@ -50,17 +51,26 @@ class AttendanceService
         }
 
         return DB::transaction(function () use ($data, $isLate, $userId) {
+            // 🔹 Default null kalau gak ada foto
+            $path = null;
+
+            // 🔹 Upload foto dulu (kalau ada)
+            if (isset($data['photo'])) {
+                $photoService = app(AttendancePhotoService::class);
+                $path = $photoService->upload($data['photo']); 
+            }
+
             $attendance = Attendance::create([
                 'account_id' => $userId,
                 'type' => 'clock_in',
                 'timestamp' => $data['timestamp'],
                 'latitude' => $data['latitude'],
                 'longitude' => $data['longitude'],
-                'photo_path' => $data['photo_path'],
+                'photo_path' => $path,
                 'is_late' => $isLate,
                 'status' => 'approved',
             ]);
-
+            
             if ($isLate) {
                 AttendanceReason::create([
                     'attendance_id' => $attendance->id,
