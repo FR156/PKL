@@ -51,13 +51,16 @@ class AttendanceService
         }
 
         return DB::transaction(function () use ($data, $isLate, $userId) {
-            // 🔹 Default null kalau gak ada foto
             $path = null;
 
-            // 🔹 Upload foto dulu (kalau ada)
-            if (isset($data['photo'])) {
+            // Handle file upload with proper validation
+            if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
                 $photoService = app(AttendancePhotoService::class);
-                $path = $photoService->upload($data['photo']); 
+                $path = $photoService->upload($data['photo']);
+                
+                \Log::info('File uploaded successfully', ['path' => $path]);
+            } else {
+                \Log::warning('No valid photo file provided or file is not UploadedFile instance');
             }
 
             $attendance = Attendance::create([
