@@ -32,7 +32,11 @@ class DummySeeder extends Seeder
             $account->assignRole('employee');
         });
 
-        
+        Account::factory()->create([
+            'name' => 'Ammar',
+        ])->each(function ($account) {
+            $account->assignRole('employee'); 
+        });
 
         $this->command->info('10 users created with specific roles: 1 Owner, 2 Manager, 2 Supervisor, 5 Employee, now Ammar is part of the team!');
     }
