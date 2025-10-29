@@ -83,6 +83,8 @@ class AttendanceService
                 ]);
             }
 
+            $attendance->photo_url = asset('storage/' . $attendance->photo_path);
+
             return $attendance;
         });
     }
@@ -147,6 +149,8 @@ class AttendanceService
                     'review_status' => 'pending',
                 ]);
             }
+
+            $attendance->photo_url = asset('storage/' . $attendance->photo_path);
 
             return $attendance;
         });

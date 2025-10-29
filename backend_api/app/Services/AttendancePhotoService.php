@@ -37,7 +37,7 @@ class AttendancePhotoService
         }
 
         // Generate unique filename
-        $filename = 'attendance_' . 'userId_' . $userId . '_timestamp_' . $time->format('Y-m-d_H-i-s') . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+        $filename = 'attendance_' . 'id=' . $userId . '_time=' . $time->format('Y-m-d_H-i-s') . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
 
         // Store file with explicit disk configuration
         $path = $file->storeAs('attendance_photos', $filename, 'public');
