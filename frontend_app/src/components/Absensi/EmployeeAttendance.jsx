@@ -6,7 +6,7 @@ import { showSwal } from '../../utils/swal';
 import CameraModal from '../Shared/Modals/CameraModal';
 import PermissionModal from '../Shared/Modals/PermissionModal';
 
-const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => {
+const EmployeeAttendance = ({ user, setEmployees, workSettings }) => {
     const [lastAttendance, setLastAttendance] = useState(null);
     const [attendanceHistory, setAttendanceHistory] = useState([]);
     const [groupedAttendance, setGroupedAttendance] = useState([]);
@@ -507,7 +507,7 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {groupedAttendance.map((record, index) => (
+                                {groupedAttendance.map((record) => (
                                     <tr 
                                         key={record.date} 
                                         className="hover:bg-gray-50 transition-colors duration-200"
