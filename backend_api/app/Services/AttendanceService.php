@@ -108,13 +108,25 @@ class AttendanceService
         }
 
         return DB::transaction(function () use ($data, $irregularClockout, $autoClockout, $earlyClockout, $userId) {
+            $path = null;
+
+            // Handle file upload with proper validation
+            if (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
+                $photoService = app(AttendancePhotoService::class);
+                $path = $photoService->upload($data['photo'], $userId, $data['timestamp']);
+                
+                \Log::info('File uploaded successfully', ['path' => $path]);
+            } else {
+                \Log::warning('No valid photo file provided or file is not UploadedFile instance');
+            }
+
             $attendance = Attendance::create([
                 'account_id' => $userId,
                 'type' => 'clock_out',
                 'timestamp' => $data['timestamp'],
                 'latitude' => $data['latitude'],
                 'longitude' => $data['longitude'],
-                'photo_path' => $data['photo_path'],
+                'photo_path' => $path,
                 'status' => 'approved',
                 'irregular_clockout' => $irregularClockout,
             ]);

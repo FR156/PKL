@@ -60,4 +60,15 @@ class AttendancePhotoService
     {
         return Storage::disk('public')->url($path);
     }
+
+    protected $appends = ['photo_url'];
+
+    public function getPhotoUrlAttribute()
+    {
+        if (!$this->photo_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->photo_path);
+    }
 }

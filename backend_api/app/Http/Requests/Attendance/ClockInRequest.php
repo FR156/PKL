@@ -25,7 +25,7 @@ class ClockInRequest extends FormRequest
             'timestamp' => 'required|date',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'photo' => 'required|image|mimes:jpeg,png,jpg|max:5120', // max 5MB
             'description' => 'nullable|string|max:500',
         ];
     }
@@ -47,7 +47,8 @@ class ClockInRequest extends FormRequest
             'longitude.numeric' => 'Longitude must be a number',
             'longitude.between' => 'Longitude must be between -180 and 180',
             'photo.image' => 'Photo must be an image',
-            'photo.mimes' => 'Photo must be a file of type: jpeg, png, jpg, webp',
+            'photo.mimes' => 'Photo must be a file of type: jpeg, png, jpg',
+            'photo.max' => 'Photo may not be greater than 5MB',
             'description.string' => 'Description must be a string',
             'description.max' => 'Description may not be greater than 500 characters',
         ];

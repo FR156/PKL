@@ -65,6 +65,29 @@ class AttendanceController extends Controller
         }
     }
 
+    public function showPhoto($id)
+    {
+        $attendance = Attendance::findOrFail($id);
+        
+        // Check if photo exists
+        if (!$attendance->photo_path) {
+            abort(404, 'Photo not found');
+        }
+
+        // Check if file exists in storage
+        if (!Storage::disk('public')->exists($attendance->photo_path)) {
+            abort(404, 'Photo file not found');
+        }
+
+        // Get file contents and appropriate MIME type
+        $file = Storage::disk('public')->get($attendance->photo_path);
+        $mimeType = Storage::disk('public')->mimeType($attendance->photo_path);
+
+        return response($file, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Content-Disposition', 'inline; filename="' . basename($attendance->photo_path) . '"');
+    }
+
     public function approved()
     {
         $records = $this->attendanceService->getApprovedAttendances();
