@@ -145,10 +145,10 @@ const EmployeeAttendance = ({ user, employees, setEmployees, workSettings }) => 
                     const officeLon = 98.7294571;
                     const distance = calculateDistance(latitude, longitude, officeLat, officeLon);
                     
-                    if (distance > 1000) { // 1000 meter radius
+                    if (distance > 20000) { // 1000 meter radius
                         showSwal(
                             'Lokasi Diluar Radius', 
-                            `Anda berada ${distance.toFixed(0)} meter dari kantor. Maksimal radius 1000 meter.`, 
+                            `Anda berada ${distance.toFixed(0)} meter dari kantor. Maksimal radius 20000 meter.`, 
                             'error'
                         );
                         setIsClocking(false);

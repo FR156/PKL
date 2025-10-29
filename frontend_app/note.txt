@@ -94,6 +94,7 @@ peforma :
 
 owner:
 kenapa skor karyawan rendah itu tercatat semua kenapa, contoh daftar tugas yg blm dia siapkan masih ada atau tercatat
+owner chart bukan persen di bagian kehadiran tapi total karyawan
 
 
 security
@@ -119,5 +120,3 @@ setelah habis jam terlambat itu clockinnya di disabled
 
 tab tambabhan lupa login/clockout
 kalau lupa clock in dan lewat jam terlambat itu button clockinnya di disable dan si button clockoutnya di enable
-
-filter divisi di manager payroll report
